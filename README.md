@@ -1,1 +1,5 @@
-# Systemy zdecentralizowane i agentowe - CAPO
+Systemy zdecentralizowane i agentowe - CAPO
+======
+
+Wizja
+------
