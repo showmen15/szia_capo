@@ -1,1 +1,2 @@
-# Systemy zdecentralizowane i agentowe - Projekt CAPO
+# Systemy zdecentralizowane i agentowe
+# Projekt CAPO
