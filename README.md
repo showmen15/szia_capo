@@ -1,1 +1,1 @@
-# szia_capo
+# Systemy zdecentralizowane i agentowe - Projekt CAPO
