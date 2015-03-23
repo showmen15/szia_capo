@@ -1,3 +1,5 @@
+package pl.edu.agh.capo.scheduler;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
