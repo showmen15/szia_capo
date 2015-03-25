@@ -5,43 +5,42 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class Scheduler {
+public class MultiThreadedScheduler {
 
     public static final int OPERATION_TIME = 500;
 
     private final int periodTime;
     private final int count;
 
-    private final Worker worker = new Worker();
+    private final List<Printer> printers;
     private final List<Integer> printerRuntimes;
 
     private final Random random = new Random();
 
-    public Scheduler(int periodTime, int count) {
+    public MultiThreadedScheduler(int periodTime, int count) {
         this.periodTime = periodTime;
         this.count = count;
         printerRuntimes = Collections.synchronizedList(new ArrayList<Integer>(count));
-        initializeRuntimes(count);
+        printers = new ArrayList<Printer>(count);
+        initializePrinters(count);
     }
 
-    private void initializeRuntimes(int count) {
+    private void initializePrinters(int count) {
         for (int i = 0; i < count; i++) {
+            Printer printer = new Printer(i);
+            printers.add(printer);
             printerRuntimes.add(periodTime / count);
         }
     }
 
-    private void startWorker() {
-        new Thread(worker).start();
-    }
-
     public void start() {
-        startWorker();
+        startPrinter(0);
     }
 
     public void update() {
         //update data
-        startWorker();
         recalculatePrintersRuntime();
+        startPrinter(0);
     }
 
     private void recalculatePrintersRuntime() {
@@ -58,13 +57,26 @@ public class Scheduler {
         printerRuntimes.set(count - 1, leftTime);
     }
 
+    private void startPrinter(int index) {
+        if (index < count) {
+            new Thread(printers.get(index)).start();
+        }
+    }
+
     private int getPrinterRuntime(int index) {
         return printerRuntimes.get(index);
     }
 
-    private class Worker implements Runnable {
+    private class Printer implements Runnable {
 
-        private void count(int id) {
+        private final int id;
+
+        private Printer(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public void run() {
             int numberOfIterations = getPrinterRuntime(id) / OPERATION_TIME;
             for (int i = 0; i < numberOfIterations; i++) {
                 try {
@@ -74,13 +86,7 @@ public class Scheduler {
                 }
                 System.out.println(id);
             }
-        }
-
-        @Override
-        public void run() {
-            for (int id = 0; id < count; id++) {
-                count(id);
-            }
+            startPrinter(id + 1);
         }
     }
 }

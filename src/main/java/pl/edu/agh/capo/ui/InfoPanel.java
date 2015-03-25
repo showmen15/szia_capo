@@ -15,7 +15,7 @@ public class InfoPanel extends JPanel {
         readDataButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Juz czytom");
+                System.out.println("Czytam");
             }
         });
         this.add(readDataButton);
