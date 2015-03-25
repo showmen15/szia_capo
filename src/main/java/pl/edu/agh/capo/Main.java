@@ -9,16 +9,17 @@ public class Main {
 
     public static void main(String[] args) {
         CapoMazeVisualizer.getInstance().open();
-        Scheduler scheduler = new Scheduler(PERIOD_TIME, 4);
-        scheduler.start();
 
-        while (true) {
-            try {
-                Thread.sleep(PERIOD_TIME);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            scheduler.update();
-        }
+//        Scheduler scheduler = new Scheduler(PERIOD_TIME, 4);
+//        scheduler.start();
+//
+//        while (true) {
+//            try {
+//                Thread.sleep(PERIOD_TIME);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            scheduler.update();
+//        }
     }
 }

@@ -17,6 +17,9 @@ import java.io.FileReader;
 
 public class CapoMazeVisualizer extends JFrame {
 
+    private static final Dimension FRAME_SIZE = new Dimension(800, 660);
+    private static final int SPLIT_DIVIDER_LOCATION = 600;
+
     private final Logger logger = Logger.getLogger(CapoMazeVisualizer.class);
 
     private static final CapoMazeVisualizer instance = new CapoMazeVisualizer();
@@ -36,9 +39,10 @@ public class CapoMazeVisualizer extends JFrame {
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setContentPane(createSplitPanel());
-        setMinimumSize(new Dimension(500, 500));
+        setSize(FRAME_SIZE);
         setVisible(true);
-        setResizable(true);
+        setResizable(false);
+        System.out.println(mazePanel.getSize());
     }
 
     private JMenuBar createMenuBar() {
@@ -74,15 +78,12 @@ public class CapoMazeVisualizer extends JFrame {
 
     private JSplitPane createSplitPanel() {
         mazePanel = new MazePanel();
-        InfoPanel infoPanel = new InfoPanel();
-
-        Dimension minimumSize = new Dimension(200, 0);
-        mazePanel.setMinimumSize(minimumSize);
-        infoPanel.setMinimumSize(minimumSize);
+        InfoPanel infoPanel = new InfoPanel(mazePanel);
 
         JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mazePanel, infoPanel);
-        pane.setResizeWeight(0.8);
         pane.setDividerSize(5);
+        pane.setDividerLocation(SPLIT_DIVIDER_LOCATION);
+        pane.setEnabled(false);
         return pane;
     }
 }
