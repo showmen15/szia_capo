@@ -4,6 +4,7 @@ package pl.edu.agh.capo.ui;
 import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 import pl.edu.agh.capo.maze.MazeMap;
+import pl.edu.agh.capo.logic.common.MeasurementReader;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -37,12 +38,11 @@ public class CapoMazeVisualizer extends JFrame {
     public void open() {
         setJMenuBar(createMenuBar());
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setContentPane(createSplitPanel());
         setSize(FRAME_SIZE);
         setVisible(true);
         setResizable(false);
-        System.out.println(mazePanel.getSize());
     }
 
     private JMenuBar createMenuBar() {
@@ -77,7 +77,7 @@ public class CapoMazeVisualizer extends JFrame {
     }
 
     private JSplitPane createSplitPanel() {
-        mazePanel = new MazePanel();
+        mazePanel = new MazePanel(new MeasurementReader("C:/Users/Ucash/Documents/DaneLabirynt1.csv"));
         InfoPanel infoPanel = new InfoPanel(mazePanel);
 
         JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mazePanel, infoPanel);

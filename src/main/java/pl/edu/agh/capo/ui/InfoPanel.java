@@ -11,14 +11,37 @@ public class InfoPanel extends JPanel {
     public InfoPanel(MazePanel mazePanel){
         super();
         this.mazePanel = mazePanel;
-        JButton readDataButton = new JButton("Odczytaj pomiar");
-        readDataButton.addActionListener(new ActionListener() {
+        JButton nextMeasureButton = new JButton("Kolejny pomiar");
+        nextMeasureButton.addActionListener(nextMeasureButtonListener());
+        this.add(nextMeasureButton);
+        this.validate();
+
+        JButton nextAgentButton = new JButton("Kolejny agent");
+        nextAgentButton.addActionListener(nexAgentButtonListener());
+        this.add(nextAgentButton);
+        this.validate();
+
+        JLabel measureLabel = new JLabel("");
+        this.add(measureLabel);
+        this.validate();
+
+    }
+
+    private ActionListener nextMeasureButtonListener(){
+        return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Czytam");
+                mazePanel.nextMeasure();
             }
-        });
-        this.add(readDataButton);
-        this.validate();
+        };
+    }
+
+    private ActionListener nexAgentButtonListener(){
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mazePanel.nextAgent();
+            }
+        };
     }
 }

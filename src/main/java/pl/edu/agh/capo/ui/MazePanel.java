@@ -1,8 +1,15 @@
 package pl.edu.agh.capo.ui;
 
+import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.common.MeasureResult;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.MazeMap;
+import pl.edu.agh.capo.maze.Space;
 import pl.edu.agh.capo.maze.Wall;
+import pl.edu.agh.capo.maze.helper.MazeHelper;
+import pl.edu.agh.capo.logic.common.MeasurementReader;
+import pl.edu.agh.capo.logic.common.AgentMove;
+import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +18,7 @@ import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class MazePanel extends JPanel {
+public class MazePanel extends JPanel implements IAgentMoveListener {
 
     private final static double MAZE_SIZE = 500.0;
     private final static double START_MAZE_COORDINATE = 50.0;
@@ -23,15 +30,34 @@ public class MazePanel extends JPanel {
     private double minX;
     private double ratio;
 
-    public MazePanel(){
+    private int currentMeasureIndex;
+    private int currentAgentIndex;
+
+    private MeasurementReader measurementReader;
+
+    public MazePanel(MeasurementReader measurementReader){
         super();
+        this.measurementReader = measurementReader;
+        currentMeasureIndex = 0;
+        currentAgentIndex = 0;
+        setFocusable(true);
+        requestFocusInWindow();
+        addKeyListener(new CapoKeyListener(this));
         agents = new ArrayList<Agent>();
-        agents.add(new Agent(1.2, 1.7, 42));
     }
 
     public void updateMaze(MazeMap map) {
         this.map = map;
+        createAgents();
         repaint();
+    }
+
+    private void createAgents() {
+        for (Space space : map.getSpaces()) {
+            Agent agent = new Agent(MazeHelper.getRoom(space.getId(), map));
+            agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
+            agents.add(agent);
+        }
     }
 
     public void paintComponent(Graphics g) {
@@ -41,30 +67,56 @@ public class MazePanel extends JPanel {
         super.paintComponent(g);
         getNormalizationData();
         Graphics2D g2 = (Graphics2D) g;
-        printGates(g2);
-        printWalls(g2);
-        printAgents(g2);
+        printGates(g2, map.getGates(), Color.cyan);
+        printWalls(g2, map.getWalls(), Color.gray);
+        printCurrentAgent(g2);
+        printGates(g2, agents.get(currentAgentIndex).getRoom().getGates(), Color.blue);
+        printWalls(g2, agents.get(currentAgentIndex).getRoom().getWalls(), Color.black);
     }
 
-    private void printAgents(Graphics2D g2) {
-        for (Agent agent : agents){
-            printAgent(agent, g2);
-        }
+    private void printCurrentAgent(Graphics2D g2) {
+        printAgent(agents.get(currentAgentIndex), g2);
     }
 
     private void printAgent(Agent agent, Graphics2D g2) {
-        g2.setColor(new Color(0, 255, 0, 127));
-        Polygon vision = getVisionPolygon(agent);
-        g2.draw(vision);
-        g2.fill(vision);
-
-        g2.setColor(Color.red);
+        //g2.setColor(new Color(0, 255, 0, 127));
+        //Polygon vision = getVisionPolygon(agent);
+        //g2.draw(vision);
+        //g2.fill(vision);
         double x = normalizeCoordinate(agent.getX(), minX, ratio);
         double y = normalizeCoordinate(agent.getY(), minY, ratio);
+        agent.analyzeMeasure();
+        Map<MeasureResult, Integer> measureCounts = agent.getMeasureCounts();
+        Map<Double, MeasureResult> measureResults = agent.getMeasureResults();
+        g2.setStroke(new BasicStroke(1));
+        for (Map.Entry<Double, Double> vision : agent.getVision().entrySet()) {
+            switch (measureResults.get(vision.getKey())){
+                case IGNORE:
+                    g2.setColor(Color.yellow);
+                    break;
+                case VALID:
+                    g2.setColor(Color.green);
+                    break;
+                case INVALID:
+                    g2.setColor(Color.orange);
+                    break;
+            }
+            g2.draw(new Line2D.Double(x, y,
+                    getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getKey(), vision.getValue()),
+                    getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getKey(), vision.getValue())));
+        }
+
+        g2.setColor(Color.red);
         Ellipse2D.Double ellipse = new Ellipse2D.Double(x - 3.5, y - 3.5, 7.0, 7.0);
         g2.draw(ellipse);
         g2.fill(ellipse);
         g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(agent.getX(), agent.getAlpha(), 0, 0.1), getVisionYCoordinate(agent.getY(), agent.getAlpha(), 0, 0.1)));
+        g2.setColor(Color.black);
+        g2.drawString(String.format("Pasuje: %d, Niepasuje: %d, Brama: %d",
+                        measureCounts.get(MeasureResult.VALID),
+                        measureCounts.get(MeasureResult.INVALID),
+                        measureCounts.get(MeasureResult.IGNORE)),
+                20, 20);
     }
 
     private Polygon getVisionPolygon(Agent agent){
@@ -103,10 +155,10 @@ public class MazePanel extends JPanel {
         return normalizeCoordinate(visionY, minY, ratio);
     }
 
-    private void printGates(Graphics2D g) {
+    private void printGates(Graphics2D g, java.util.List<Gate> gates, Color color) {
         g.setStroke(new BasicStroke(1));
-        g.setColor(Color.blue);
-        for (Gate gate : map.getGates()){
+        g.setColor(color);
+        for (Gate gate : gates){
             printGate(gate, g);
         }
     }
@@ -120,10 +172,10 @@ public class MazePanel extends JPanel {
         g.draw(new Line2D.Double(x1, y1, x2, y2));
     }
 
-    private void printWalls(Graphics2D g) {
+    private void printWalls(Graphics2D g, java.util.List<Wall> walls, Color color) {
         g.setStroke(new BasicStroke(3));
-        g.setColor(Color.black);
-        for (Wall wall : map.getWalls()){
+        g.setColor(color);
+        for (Wall wall : walls){
             printWall(wall, g);
         }
     }
@@ -142,10 +194,10 @@ public class MazePanel extends JPanel {
     }
 
     private void getNormalizationData(){
-        double minY = getMinYInMazeMap();
-        double maxY = getMaxYInMazeMap();
-        double minX = getMinXInMazeMap();
-        double maxX = getMaxXInMazeMap();
+        double minY = MazeHelper.getMinY(map.getWalls());
+        double maxY = MazeHelper.getMaxY(map.getWalls());
+        double minX = MazeHelper.getMinX(map.getWalls());
+        double maxX = MazeHelper.getMaxX(map.getWalls());
 
         double height = maxY - minY;
         double width = maxX - minX;
@@ -158,55 +210,48 @@ public class MazePanel extends JPanel {
         }
     }
 
-    private double getMinYInMazeMap(){
-        double min = Double.MAX_VALUE;
-        for (Wall wall : map.getWalls()){
-            if (wall.getFrom().getY() < min){
-                min = wall.getFrom().getY();
-            }
-            if (wall.getTo().getY() < min){
-                min = wall.getTo().getY();
-            }
+    @Override
+    public void onAgentMoved(AgentMove move) {
+        Agent agent = agents.get(currentAgentIndex);
+
+        switch (move){
+            case UP:
+                agent.setY(agent.getY() - 0.05);
+                break;
+            case DOWN:
+                agent.setY(agent.getY() + 0.05);
+                break;
+            case LEFT:
+                agent.setX(agent.getX() - 0.05);
+                break;
+            case RIGHT:
+                agent.setX(agent.getX() + 0.05);
+                break;
+            case ROTATE_LEFT:
+                agent.setAlpha(agent.getAlpha() - 2);
+                break;
+            case ROTATE_RIGHT:
+                agent.setAlpha(agent.getAlpha() + 2);
+                break;
         }
-        return min;
+        repaint();
     }
 
-    private double getMaxYInMazeMap(){
-        double max = Double.MIN_VALUE;
-        for (Wall wall : map.getWalls()){
-            if (wall.getFrom().getY() > max){
-                max = wall.getFrom().getY();
-            }
-            if (wall.getTo().getY() > max){
-                max = wall.getTo().getY();
-            }
+    public void nextMeasure(){
+        currentMeasureIndex = (currentMeasureIndex + 1) % measurementReader.getSize();
+        for (Agent agent : agents){
+            agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
         }
-        return max;
+        repaint();
+        setFocusable(true);
+        requestFocusInWindow();
+
     }
 
-    private double getMinXInMazeMap(){
-        double min = Double.MAX_VALUE;
-        for (Wall wall : map.getWalls()){
-            if (wall.getFrom().getX() < min){
-                min = wall.getFrom().getX();
-            }
-            if (wall.getTo().getX() < min){
-                min = wall.getTo().getX();
-            }
-        }
-        return min;
-    }
-
-    private double getMaxXInMazeMap(){
-        double max = Double.MIN_VALUE;
-        for (Wall wall : map.getWalls()){
-            if (wall.getFrom().getX() > max){
-                max = wall.getFrom().getX();
-            }
-            if (wall.getTo().getX() > max){
-                max = wall.getTo().getX();
-            }
-        }
-        return max;
+    public void nextAgent(){
+        currentAgentIndex = (currentAgentIndex + 1) % agents.size();
+        repaint();
+        setFocusable(true);
+        requestFocusInWindow();
     }
 }
