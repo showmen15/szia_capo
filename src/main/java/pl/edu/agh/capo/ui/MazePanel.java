@@ -54,7 +54,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
 
     private void createAgents() {
         for (Space space : map.getSpaces()) {
-            Agent agent = new Agent(MazeHelper.getRoom(space.getId(), map));
+            Agent agent = new Agent(MazeHelper.buildRoom(space.getId(), map));
             agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
             agents.add(agent);
         }
@@ -113,11 +113,14 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
         g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(agent.getX(), agent.getAlpha(), 0, 0.1), getVisionYCoordinate(agent.getY(), agent.getAlpha(), 0, 0.1)));
         g2.setColor(Color.black);
         Map<MeasureResult, Integer> measureCounts = agent.getMeasureCounts();
-        g2.drawString(String.format("Pasuje: %d, Niepasuje: %d, Brama: %d",
+
+        g2.drawString(String.format("[%s] Pasujących: %d, Niepasujących: %d, Brama: %d",
+                        agent.getRoom().getSpaceId().toUpperCase(),
                         measureCounts.get(MeasureResult.VALID),
                         measureCounts.get(MeasureResult.INVALID),
                         measureCounts.get(MeasureResult.IGNORE)),
                 20, 20);
+
     }
 
     private Polygon getVisionPolygon(Agent agent) {
@@ -250,9 +253,20 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
     }
 
     public void nextAgent() {
-        currentAgentIndex = (currentAgentIndex + 1) % agents.size();
+        showAgent((currentAgentIndex + 1) % agents.size());
+    }
+
+    private void showAgent(int index) {
+        currentAgentIndex = index;
         repaint();
         setFocusable(true);
         requestFocusInWindow();
     }
+
+    public void prevAgent() {
+        if (currentAgentIndex > 0) {
+            showAgent((currentAgentIndex - 1) % agents.size());
+        }
+    }
+
 }

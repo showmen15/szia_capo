@@ -8,8 +8,8 @@ import java.util.List;
 
 public class MazeHelper {
 
-    public static Room getRoom(String spaceId, MazeMap maze){
-        return new Room(getRoomWalls(spaceId, maze), getRoomGates(spaceId, maze));
+    public static Room buildRoom(String spaceId, MazeMap maze) {
+        return new Room(getRoomWalls(spaceId, maze), getRoomGates(spaceId, maze), spaceId);
     }
 
     private static List<Gate> getRoomGates(String spaceId, MazeMap maze) {

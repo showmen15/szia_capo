@@ -3,8 +3,8 @@ package pl.edu.agh.capo.ui;
 
 import com.google.gson.Gson;
 import org.apache.log4j.Logger;
-import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.logic.common.MeasurementReader;
+import pl.edu.agh.capo.maze.MazeMap;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -26,6 +26,7 @@ public class CapoMazeVisualizer extends JFrame {
     private static final CapoMazeVisualizer instance = new CapoMazeVisualizer();
 
     private MazePanel mazePanel;
+    private InfoPanel infoPanel;
 
     private CapoMazeVisualizer() {
         super("CAPO maze editor");
@@ -62,6 +63,7 @@ public class CapoMazeVisualizer extends JFrame {
                     try {
                         MazeMap mazeMap = gson.fromJson(new FileReader(file), MazeMap.class);
                         mazePanel.updateMaze(mazeMap);
+                        infoPanel.enableButtons();
                     } catch (FileNotFoundException e1) {
                         logger.debug("Could not read file: " + file.getName());
                     }
@@ -77,13 +79,14 @@ public class CapoMazeVisualizer extends JFrame {
     }
 
     private JSplitPane createSplitPanel() {
-        mazePanel = new MazePanel(new MeasurementReader("C:/Users/Ucash/Documents/DaneLabirynt1.csv"));
-        InfoPanel infoPanel = new InfoPanel(mazePanel);
+        mazePanel = new MazePanel(new MeasurementReader("DaneLabirynt1.csv"));
+        infoPanel = new InfoPanel(mazePanel);
 
-        JSplitPane pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mazePanel, infoPanel);
-        pane.setDividerSize(5);
-        pane.setDividerLocation(SPLIT_DIVIDER_LOCATION);
-        pane.setEnabled(false);
-        return pane;
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mazePanel, infoPanel);
+        splitPane.setDividerSize(5);
+        splitPane.setDividerLocation(SPLIT_DIVIDER_LOCATION);
+        splitPane.setEnabled(false);
+
+        return splitPane;
     }
 }

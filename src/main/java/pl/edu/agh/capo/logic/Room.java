@@ -9,22 +9,24 @@ import java.util.List;
 
 public class Room {
 
-    private List<Wall> walls;
-    private List<Gate> gates;
+    private final List<Wall> walls;
+    private final List<Gate> gates;
 
     private double minY;
     private double maxY;
     private double minX;
     private double maxX;
 
-    private List<Gate> northGates;
-    private List<Gate> southGates;
-    private List<Gate> westGates;
-    private List<Gate> eastGates;
+    private final List<Gate> northGates;
+    private final List<Gate> southGates;
+    private final List<Gate> westGates;
+    private final List<Gate> eastGates;
+    private final String spaceId;
 
-    public Room(List<Wall> walls, List<Gate> gates) {
+    public Room(List<Wall> walls, List<Gate> gates, String spaceId) {
         this.walls = walls;
         this.gates = gates;
+        this.spaceId = spaceId;
 
         northGates = new ArrayList<Gate>();
         southGates = new ArrayList<Gate>();
@@ -73,6 +75,10 @@ public class Room {
 
     public List<Gate> getEastGates() {
         return eastGates;
+    }
+
+    public String getSpaceId() {
+        return spaceId;
     }
 
     private void findCorners() {

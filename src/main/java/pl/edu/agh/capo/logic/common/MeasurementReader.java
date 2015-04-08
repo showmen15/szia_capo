@@ -16,7 +16,7 @@ public class MeasurementReader {
     public MeasurementReader(String filePath) {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(filePath));
+            br = new BufferedReader(new FileReader(getClass().getClassLoader().getResource(filePath).getFile()));
             String line;
             while ((line = br.readLine()) != null) {
                 addMeasurement(line);
