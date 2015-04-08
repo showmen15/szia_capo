@@ -1,15 +1,15 @@
 package pl.edu.agh.capo.ui;
 
 import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.common.AgentMove;
 import pl.edu.agh.capo.logic.common.MeasureResult;
+import pl.edu.agh.capo.logic.common.MeasurementReader;
+import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.Space;
 import pl.edu.agh.capo.maze.Wall;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
-import pl.edu.agh.capo.logic.common.MeasurementReader;
-import pl.edu.agh.capo.logic.common.AgentMove;
-import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,7 +35,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
 
     private MeasurementReader measurementReader;
 
-    public MazePanel(MeasurementReader measurementReader){
+    public MazePanel(MeasurementReader measurementReader) {
         super();
         this.measurementReader = measurementReader;
         currentMeasureIndex = 0;
@@ -85,33 +85,34 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
         //g2.fill(vision);
         double x = normalizeCoordinate(agent.getX(), minX, ratio);
         double y = normalizeCoordinate(agent.getY(), minY, ratio);
-        agent.analyzeMeasure();
-        Map<MeasureResult, Integer> measureCounts = agent.getMeasureCounts();
-        Map<Double, MeasureResult> measureResults = agent.getMeasureResults();
-        g2.setStroke(new BasicStroke(1));
-        for (Map.Entry<Double, Double> vision : agent.getVision().entrySet()) {
-            switch (measureResults.get(vision.getKey())){
-                case IGNORE:
-                    g2.setColor(Color.yellow);
-                    break;
-                case VALID:
-                    g2.setColor(Color.green);
-                    break;
-                case INVALID:
-                    g2.setColor(Color.orange);
-                    break;
-            }
-            g2.draw(new Line2D.Double(x, y,
-                    getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getKey(), vision.getValue()),
-                    getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getKey(), vision.getValue())));
-        }
+        if (agent.analyzeMeasure()) {
 
+            Map<Double, MeasureResult> measureResults = agent.getMeasureResults();
+            g2.setStroke(new BasicStroke(1));
+            for (Map.Entry<Double, Double> vision : agent.getVision().entrySet()) {
+                switch (measureResults.get(vision.getKey())) {
+                    case IGNORE:
+                        g2.setColor(Color.yellow);
+                        break;
+                    case VALID:
+                        g2.setColor(Color.green);
+                        break;
+                    case INVALID:
+                        g2.setColor(Color.orange);
+                        break;
+                }
+                g2.draw(new Line2D.Double(x, y,
+                        getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getKey(), vision.getValue()),
+                        getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getKey(), vision.getValue())));
+            }
+        }
         g2.setColor(Color.red);
         Ellipse2D.Double ellipse = new Ellipse2D.Double(x - 3.5, y - 3.5, 7.0, 7.0);
         g2.draw(ellipse);
         g2.fill(ellipse);
         g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(agent.getX(), agent.getAlpha(), 0, 0.1), getVisionYCoordinate(agent.getY(), agent.getAlpha(), 0, 0.1)));
         g2.setColor(Color.black);
+        Map<MeasureResult, Integer> measureCounts = agent.getMeasureCounts();
         g2.drawString(String.format("Pasuje: %d, Niepasuje: %d, Brama: %d",
                         measureCounts.get(MeasureResult.VALID),
                         measureCounts.get(MeasureResult.INVALID),
@@ -119,7 +120,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
                 20, 20);
     }
 
-    private Polygon getVisionPolygon(Agent agent){
+    private Polygon getVisionPolygon(Agent agent) {
         ArrayList<Double> angles = new ArrayList<Double>(agent.getVision().keySet());
         java.util.Collections.sort(angles);
 
@@ -131,34 +132,34 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
         ypoints[0] = Integer.valueOf(y.intValue());
         Map<Double, Double> vision = agent.getVision();
 
-        for (int i = 0; i < angles.size(); i++){
+        for (int i = 0; i < angles.size(); i++) {
             double angle = angles.get(i);
             x = Math.round(getVisionXCoordinate(agent.getX(), agent.getAlpha(), angle, vision.get(angle)));
             y = Math.round(getVisionYCoordinate(agent.getY(), agent.getAlpha(), angle, vision.get(angle)));
-            xpoints[i+1] = Integer.valueOf(x.intValue());
-            ypoints[i+1] = Integer.valueOf(y.intValue());
+            xpoints[i + 1] = Integer.valueOf(x.intValue());
+            ypoints[i + 1] = Integer.valueOf(y.intValue());
         }
-        xpoints[xpoints.length -1] = xpoints[0];
-        ypoints[ypoints.length -1] = ypoints[0];
+        xpoints[xpoints.length - 1] = xpoints[0];
+        ypoints[ypoints.length - 1] = ypoints[0];
         return new Polygon(xpoints, ypoints, angles.size());
     }
 
-    private double getVisionXCoordinate(double agentX, double agentAlpha, double visionAlpha, double visionRange){
+    private double getVisionXCoordinate(double agentX, double agentAlpha, double visionAlpha, double visionRange) {
         double sinus = Math.sin(Math.toRadians(visionAlpha + agentAlpha));
         double visionX = agentX + (sinus * visionRange);
         return normalizeCoordinate(visionX, minX, ratio);
     }
 
-    private double getVisionYCoordinate(double agentY, double agentAlpha, double visionAlpha, double visionRange){
+    private double getVisionYCoordinate(double agentY, double agentAlpha, double visionAlpha, double visionRange) {
         double cosinus = Math.cos(Math.toRadians(visionAlpha + agentAlpha));
-        double visionY = agentY - (cosinus * visionRange) ;
+        double visionY = agentY - (cosinus * visionRange);
         return normalizeCoordinate(visionY, minY, ratio);
     }
 
     private void printGates(Graphics2D g, java.util.List<Gate> gates, Color color) {
         g.setStroke(new BasicStroke(1));
         g.setColor(color);
-        for (Gate gate : gates){
+        for (Gate gate : gates) {
             printGate(gate, g);
         }
     }
@@ -175,7 +176,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
     private void printWalls(Graphics2D g, java.util.List<Wall> walls, Color color) {
         g.setStroke(new BasicStroke(3));
         g.setColor(color);
-        for (Wall wall : walls){
+        for (Wall wall : walls) {
             printWall(wall, g);
         }
     }
@@ -189,11 +190,11 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
         g.draw(new Line2D.Double(x1, y1, x2, y2));
     }
 
-    private double normalizeCoordinate(double val, double min, double ratio){
+    private double normalizeCoordinate(double val, double min, double ratio) {
         return ((val - min) * ratio) + START_MAZE_COORDINATE;
     }
 
-    private void getNormalizationData(){
+    private void getNormalizationData() {
         double minY = MazeHelper.getMinY(map.getWalls());
         double maxY = MazeHelper.getMaxY(map.getWalls());
         double minX = MazeHelper.getMinX(map.getWalls());
@@ -203,7 +204,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
         double width = maxX - minX;
         this.minX = minX;
         this.minY = minY;
-        if (height > width){
+        if (height > width) {
             ratio = MAZE_SIZE / height;
         } else {
             ratio = MAZE_SIZE / width;
@@ -214,7 +215,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
     public void onAgentMoved(AgentMove move) {
         Agent agent = agents.get(currentAgentIndex);
 
-        switch (move){
+        switch (move) {
             case UP:
                 agent.setY(agent.getY() - 0.05);
                 break;
@@ -237,9 +238,9 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
         repaint();
     }
 
-    public void nextMeasure(){
+    public void nextMeasure() {
         currentMeasureIndex = (currentMeasureIndex + 1) % measurementReader.getSize();
-        for (Agent agent : agents){
+        for (Agent agent : agents) {
             agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
         }
         repaint();
@@ -248,7 +249,7 @@ public class MazePanel extends JPanel implements IAgentMoveListener {
 
     }
 
-    public void nextAgent(){
+    public void nextAgent() {
         currentAgentIndex = (currentAgentIndex + 1) % agents.size();
         repaint();
         setFocusable(true);

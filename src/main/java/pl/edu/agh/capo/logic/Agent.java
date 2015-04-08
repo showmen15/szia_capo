@@ -72,7 +72,7 @@ public class Agent {
         return room;
     }
 
-    public void analyzeMeasure() {
+    public boolean analyzeMeasure() {
         measureResults = new HashMap<Double, MeasureResult>();
         measureCounts = new HashMap<MeasureResult, Integer>();
 
@@ -87,14 +87,17 @@ public class Agent {
                 measureResults.put(singleVision.getKey(), measureResult);
                 measureCounts.put(measureResult, measureCounts.get(measureResult) + 1);
             }
+            return true;
         } catch (CoordinateOutOfRoomException e) {
             measureCounts.put(MeasureResult.VALID, -1);
             measureCounts.put(MeasureResult.INVALID, -1);
             measureCounts.put(MeasureResult.IGNORE, -1);
+            return false;
         } catch (AngleOutOfRangeException e) {
             measureCounts.put(MeasureResult.VALID, -2);
             measureCounts.put(MeasureResult.INVALID, -2);
             measureCounts.put(MeasureResult.IGNORE, -2);
+            return false;
         }
     }
 }
