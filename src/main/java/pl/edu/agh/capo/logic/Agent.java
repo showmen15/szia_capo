@@ -51,6 +51,12 @@ public class Agent {
     }
 
     public void setAlpha(double alpha) {
+        while (alpha < -180.0){
+            alpha += 360.0;
+        }
+        while (alpha > 180.0){
+            alpha -= 360.0;
+        }
         this.alpha = alpha;
     }
 
