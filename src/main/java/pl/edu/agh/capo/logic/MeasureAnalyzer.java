@@ -1,6 +1,5 @@
 package pl.edu.agh.capo.logic;
 
-import pl.edu.agh.capo.logic.common.MeasureResult;
 import pl.edu.agh.capo.logic.exception.AngleOutOfRangeException;
 import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
 import pl.edu.agh.capo.maze.Gate;
@@ -9,7 +8,7 @@ import java.util.List;
 
 public class MeasureAnalyzer {
 
-    private final static double ACCURACY = 0.1;
+    private final static double ACCURACY = 0.2;
 
     private Room room;
     private double x;
@@ -51,7 +50,7 @@ public class MeasureAnalyzer {
         return result;
     }
 
-    public MeasureResult isMeasureFit(double angle, double distance) throws AngleOutOfRangeException, CoordinateOutOfRoomException {
+    public double isMeasureFit(double angle, double distance) throws AngleOutOfRangeException, CoordinateOutOfRoomException {
         double alpha = normalizeAngle(angle);
         if (alpha > 0) {
             if (alpha == 180.0) {
@@ -102,17 +101,17 @@ public class MeasureAnalyzer {
         }
     }
 
-    private MeasureResult checkMeasureHorizontally(double agentX, double agentY, double roomX, double roomY, double distance, List<Gate> gates) {
+    private double checkMeasureHorizontally(double agentX, double agentY, double roomX, double roomY, double distance, List<Gate> gates) {
         if (isMeasureInGateHorizontally(roomX, gates)) {
-            return MeasureResult.IGNORE;
+            return -1.0;
         }
         double realDistance = getDistance(agentX, agentY, roomX, roomY);
         return isMeasureWithAccuracy(distance, realDistance);
     }
 
-    private MeasureResult checkMeasureVerically(double agentX, double agentY, double roomX, double roomY, double distance, List<Gate> gates) {
-        if (isMeasureInGateVerically(roomY, gates)) {
-            return MeasureResult.IGNORE;
+    private double checkMeasureVerically(double agentX, double agentY, double roomX, double roomY, double distance, List<Gate> gates) {
+        if (isMeasureInGateVertically(roomY, gates)) {
+            return -1.0;
         }
         double realDistance = getDistance(agentX, agentY, roomX, roomY);
         return isMeasureWithAccuracy(distance, realDistance);
@@ -129,7 +128,7 @@ public class MeasureAnalyzer {
         return false;
     }
 
-    private boolean isMeasureInGateVerically(double y, List<Gate> gates) {
+    private boolean isMeasureInGateVertically(double y, List<Gate> gates) {
         for (Gate gate : gates) {
             double start = Math.min(gate.getFrom().getY(), gate.getTo().getY());
             double end = Math.max(gate.getFrom().getY(), gate.getTo().getY());
@@ -146,10 +145,11 @@ public class MeasureAnalyzer {
         return Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
     }
 
-    private MeasureResult isMeasureWithAccuracy(double x, double y) {
-        if (Math.abs(x - y) < ACCURACY) {
-            return MeasureResult.VALID;
+    private double isMeasureWithAccuracy(double x, double y) {
+        double diff = Math.abs(x - y);
+        if (Math.abs(x - y) > ACCURACY) {
+            return 0.0;
         }
-        return MeasureResult.INVALID;
+        return 1.0 - (diff / ACCURACY);
     }
 }
