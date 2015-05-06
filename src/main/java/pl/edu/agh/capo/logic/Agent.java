@@ -2,8 +2,6 @@ package pl.edu.agh.capo.logic;
 
 import pl.edu.agh.capo.logic.common.MeasureResult;
 import pl.edu.agh.capo.logic.common.MeasurementReader;
-import pl.edu.agh.capo.logic.exception.AngleOutOfRangeException;
-import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +10,7 @@ public class Agent {
 
     private double x;
     private double y;
+
     private double alpha;
     private Map<Double, Double> vision;
     private Map<Double, MeasureResult> measureResults;
@@ -21,13 +20,13 @@ public class Agent {
     public Agent(Room room) {
         this.alpha = 0;
         this.room = room;
-        x = room.getMinX() + ((room.getMaxX() - room.getMinX())/2);
-        y = room.getMinY() + ((room.getMaxY() - room.getMinY())/2);
+        x = room.getMinX() + ((room.getMaxX() - room.getMinX()) / 2);
+        y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
     }
 
-    public void setMeasure(MeasurementReader.Measure measure){
+    public void setMeasure(MeasurementReader.Measure measure) {
         this.vision = new HashMap<Double, Double>();
-        for (Map.Entry<Double, Double> singleVision : measure.getVision().entrySet()){
+        for (Map.Entry<Double, Double> singleVision : measure.getVision().entrySet()) {
             vision.put(singleVision.getKey(), singleVision.getValue() / 1000);
         }
     }
@@ -68,11 +67,11 @@ public class Agent {
         return measureCounts;
     }
 
-    public Room getRoom(){
+    public Room getRoom() {
         return room;
     }
 
-    public boolean analyzeMeasure() {
+    public double analyzeMeasure(MeasureAnalyzer analyzer) {
         measureResults = new HashMap<Double, MeasureResult>();
         measureCounts = new HashMap<MeasureResult, Integer>();
 
@@ -80,24 +79,15 @@ public class Agent {
         measureCounts.put(MeasureResult.INVALID, 0);
         measureCounts.put(MeasureResult.IGNORE, 0);
 
-        try {
-            MeasureAnalyzer counter = new MeasureAnalyzer(room, x, y);
-            for (Map.Entry<Double, Double> singleVision : vision.entrySet()) {
-                MeasureResult measureResult = counter.isMeasureFit(singleVision.getKey() + alpha, singleVision.getValue());
-                measureResults.put(singleVision.getKey(), measureResult);
-                measureCounts.put(measureResult, measureCounts.get(measureResult) + 1);
-            }
-            return true;
-        } catch (CoordinateOutOfRoomException e) {
-            measureCounts.put(MeasureResult.VALID, -1);
-            measureCounts.put(MeasureResult.INVALID, -1);
-            measureCounts.put(MeasureResult.IGNORE, -1);
-            return false;
-        } catch (AngleOutOfRangeException e) {
-            measureCounts.put(MeasureResult.VALID, -2);
-            measureCounts.put(MeasureResult.INVALID, -2);
-            measureCounts.put(MeasureResult.IGNORE, -2);
-            return false;
+        for (Map.Entry<Double, Double> singleVision : vision.entrySet()) {
+            MeasureResult measureResult = analyzer.isMeasureFit(singleVision.getKey() + alpha, singleVision.getValue());
+            measureResults.put(singleVision.getKey(), measureResult);
+            measureCounts.put(measureResult, measureCounts.get(measureResult) + 1);
         }
+
+        double probability = (double) measureCounts.get(MeasureResult.VALID) /
+                (measureCounts.get(MeasureResult.VALID) + measureCounts.get(MeasureResult.INVALID));
+
+        return probability;
     }
 }

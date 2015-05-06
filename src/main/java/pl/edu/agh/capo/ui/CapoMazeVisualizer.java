@@ -25,7 +25,6 @@ public class CapoMazeVisualizer extends JFrame {
 
     private static final CapoMazeVisualizer instance = new CapoMazeVisualizer();
 
-    private MazePanel mazePanel;
     private InfoPanel infoPanel;
 
     private CapoMazeVisualizer() {
@@ -62,8 +61,7 @@ public class CapoMazeVisualizer extends JFrame {
                     Gson gson = new Gson();
                     try {
                         MazeMap mazeMap = gson.fromJson(new FileReader(file), MazeMap.class);
-                        mazePanel.updateMaze(mazeMap);
-                        infoPanel.enableButtons();
+                        infoPanel.updateAgents(mazeMap);
                     } catch (FileNotFoundException e1) {
                         logger.debug("Could not read file: " + file.getName());
                     }
@@ -79,8 +77,8 @@ public class CapoMazeVisualizer extends JFrame {
     }
 
     private JSplitPane createSplitPanel() {
-        mazePanel = new MazePanel(new MeasurementReader("DaneLabirynt1.csv"));
-        infoPanel = new InfoPanel(mazePanel);
+        MazePanel mazePanel = new MazePanel();
+        infoPanel = new InfoPanel(mazePanel, new MeasurementReader("DaneLabirynt1.csv"));
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mazePanel, infoPanel);
         splitPane.setDividerSize(5);

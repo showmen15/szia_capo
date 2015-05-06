@@ -1,34 +1,127 @@
 package pl.edu.agh.capo.ui;
 
+import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.MeasureAnalyzer;
+import pl.edu.agh.capo.logic.common.AgentMove;
+import pl.edu.agh.capo.logic.common.MeasureResult;
+import pl.edu.agh.capo.logic.common.MeasurementReader;
+import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
+import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
+import pl.edu.agh.capo.maze.MazeMap;
+import pl.edu.agh.capo.maze.Space;
+import pl.edu.agh.capo.maze.helper.MazeHelper;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Map;
 
-public class InfoPanel extends JPanel {
+public class InfoPanel extends JPanel implements IAgentMoveListener {
 
     private MazePanel mazePanel;
-    private final JButton nextMeasureButton;
-    private final JButton nextAgentButton;
-    private final JButton prevAgentButton;
+    private JButton nextMeasureButton;
+    private JButton nextAgentButton;
+    private JButton prevAgentButton;
 
-    public InfoPanel(MazePanel mazePanel){
+    private java.util.List<Agent> agents;
+
+    private final MeasurementReader measurementReader;
+
+    private int currentMeasureIndex;
+    private int currentAgentIndex;
+    private JLabel measureValidCount;
+    private JLabel measureInvalidCount;
+    private JLabel measureIgnoredCount;
+    private JLabel agentsLabel;
+    private JLabel measuredProbability;
+
+    public InfoPanel(MazePanel mazePanel, MeasurementReader measurementReader) {
         super();
         this.mazePanel = mazePanel;
+        this.measurementReader = measurementReader;
 
-        JPanel buttonPanel = new JPanel(new GridLayout(5, 1));
+        buildView();
+        addKeyListener(new CapoKeyListener(this));
+        setFocusable(true);
+        requestFocusInWindow();
+    }
 
-        JLabel label = new JLabel("Odczyty");
-        label.setHorizontalAlignment(JLabel.CENTER);
-        buttonPanel.add(label);
-        nextMeasureButton = buildButton("Pobierz nowy", nextMeasureButtonListener());
-        buttonPanel.add(nextMeasureButton);
+    public void updateAgents(MazeMap map) {
+        agents = new ArrayList<Agent>();
+        for (Space space : map.getSpaces()) {
+            Agent agent = new Agent(MazeHelper.buildRoom(space.getId(), map));
+            agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
+            agents.add(agent);
+        }
+        mazePanel.setMaze(map);
+        showAgent(0);
 
-        buttonPanel.add(Box.createHorizontalStrut(5)); // Fixed width invisible separator.
+        setButtonsEnable(true);
+    }
 
-        label = new JLabel("Agenci");
-        label.setHorizontalAlignment(JLabel.CENTER);
-        buttonPanel.add(label);
+    private Agent currentAgent() {
+        return agents.get(currentAgentIndex);
+    }
+
+    @Override
+    public void onAgentMoved(AgentMove move) {
+        Agent agent = currentAgent();
+        double x = agent.getX();
+        double y = agent.getY();
+
+        switch (move) {
+            case UP:
+                y = y - 0.05;
+                break;
+            case DOWN:
+                y = y + 0.05;
+                break;
+            case LEFT:
+                x = x - 0.05;
+                break;
+            case RIGHT:
+                x = x + 0.05;
+                break;
+            case ROTATE_LEFT:
+                agent.setAlpha(agent.getAlpha() - 2);
+                break;
+            case ROTATE_RIGHT:
+                agent.setAlpha(agent.getAlpha() + 2);
+                break;
+        }
+        measure(x, y);
+    }
+
+    private void measure(double x, double y) {
+        Agent agent = currentAgent();
+
+        try {
+            MeasureAnalyzer analyzer = new MeasureAnalyzer(agent.getRoom(), x, y);
+            agent.setX(x);
+            agent.setY(y);
+            double probability = agent.analyzeMeasure(analyzer);
+            measuredProbability.setText(String.format("Stosunek: %f", probability));
+
+            mazePanel.repaint();
+            Map<MeasureResult, Integer> measureCounts = agent.getMeasureCounts();
+
+            measureValidCount.setText(String.format("Pasujących: %d", measureCounts.get(MeasureResult.VALID)));
+            measureInvalidCount.setText(String.format("Niepasujących: %d", measureCounts.get(MeasureResult.INVALID)));
+            measureIgnoredCount.setText(String.format("Brama: %d", measureCounts.get(MeasureResult.IGNORE)));
+
+            setFocusable(true);
+            requestFocusInWindow();
+        } catch (CoordinateOutOfRoomException ignored) {
+        }
+    }
+
+    private void buildView() {
+        JPanel buttonPanel = new JPanel(new GridLayout(9, 1));
+
+        agentsLabel = buildLabel("Agent");
+        buttonPanel.add(agentsLabel);
 
         JPanel panel = new JPanel(new GridLayout(1, 2));
 
@@ -40,6 +133,24 @@ public class InfoPanel extends JPanel {
 
         buttonPanel.add(panel);
 
+        buttonPanel.add(Box.createHorizontalStrut(5)); // Fixed width invisible separator.
+
+        JLabel measuresLabel = buildLabel("Odczyty");
+        buttonPanel.add(measuresLabel);
+
+        nextMeasureButton = buildButton("Pobierz nowy", nextMeasureButtonListener());
+        buttonPanel.add(nextMeasureButton);
+
+        measureValidCount = buildLabel("");
+        measureInvalidCount = buildLabel("");
+        measureIgnoredCount = buildLabel("");
+        buttonPanel.add(measureValidCount);
+        buttonPanel.add(measureInvalidCount);
+        buttonPanel.add(measureIgnoredCount);
+
+        measuredProbability = buildLabel("");
+        buttonPanel.add(measuredProbability);
+
         this.add(buttonPanel);
 
         setButtonsEnable(false);
@@ -47,11 +158,6 @@ public class InfoPanel extends JPanel {
         JLabel measureLabel = new JLabel("");
         this.add(measureLabel);
         this.invalidate();
-
-    }
-
-    public void enableButtons() {
-        setButtonsEnable(true);
     }
 
     private void setButtonsEnable(boolean enable) {
@@ -66,11 +172,22 @@ public class InfoPanel extends JPanel {
         return button;
     }
 
-    private ActionListener nextMeasureButtonListener(){
+    private JLabel buildLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setHorizontalAlignment(JLabel.CENTER);
+        return label;
+    }
+
+    private ActionListener nextMeasureButtonListener() {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mazePanel.nextMeasure();
+                currentMeasureIndex = (currentMeasureIndex + 1) % measurementReader.getSize();
+                for (Agent agent : agents) {
+                    agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
+                }
+                Agent agent = currentAgent();
+                measure(agent.getX(), agent.getY());
             }
         };
     }
@@ -79,7 +196,7 @@ public class InfoPanel extends JPanel {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mazePanel.nextAgent();
+                showAgent((currentAgentIndex + 1) % agents.size());
             }
         };
     }
@@ -88,8 +205,20 @@ public class InfoPanel extends JPanel {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                mazePanel.prevAgent();
+                if (currentAgentIndex > 0) {
+                    showAgent(currentAgentIndex - 1);
+                } else {
+                    showAgent(currentAgentIndex + agents.size() - 1);
+                }
             }
         };
+    }
+
+    private void showAgent(int index) {
+        currentAgentIndex = index;
+        Agent agent = currentAgent();
+        agentsLabel.setText(String.format("Agent - %s", agent.getRoom().getSpaceId()));
+        mazePanel.setAgent(agent);
+        measure(agent.getX(), agent.getY());
     }
 }

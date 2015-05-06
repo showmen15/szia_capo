@@ -1,7 +1,6 @@
 package pl.edu.agh.capo.logic;
 
 import pl.edu.agh.capo.logic.common.MeasureResult;
-import pl.edu.agh.capo.logic.exception.AngleOutOfRangeException;
 import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
 import pl.edu.agh.capo.maze.Gate;
 
@@ -9,7 +8,7 @@ import java.util.List;
 
 public class MeasureAnalyzer {
 
-    private final static double ACCURACY = 0.1;
+    private final static double ACCURACY = 0.09;
 
     private Room room;
     private double x;
@@ -40,7 +39,7 @@ public class MeasureAnalyzer {
     }
 
 
-    private double normalizeAngle(double angle) throws AngleOutOfRangeException {
+    private double normalizeAngle(double angle) {
         double result = angle;
         if (angle < -180.0) {
             result = angle + 360.0;
@@ -51,7 +50,7 @@ public class MeasureAnalyzer {
         return result;
     }
 
-    public MeasureResult isMeasureFit(double angle, double distance) throws AngleOutOfRangeException, CoordinateOutOfRoomException {
+    public MeasureResult isMeasureFit(double angle, double distance) {
         double alpha = normalizeAngle(angle);
         if (alpha > 0) {
             if (alpha == 180.0) {
