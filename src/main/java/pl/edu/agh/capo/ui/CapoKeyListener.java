@@ -10,14 +10,17 @@ public class CapoKeyListener implements KeyListener {
 
     private IAgentMoveListener agentMoveListener;
 
-    public CapoKeyListener(IAgentMoveListener agentMoveListener){
+    public CapoKeyListener(IAgentMoveListener agentMoveListener) {
         super();
         this.agentMoveListener = agentMoveListener;
     }
 
     @Override
     public void keyTyped(KeyEvent e) {
-        agentMoveListener.onAgentMoved(AgentMove.getValue(e.getKeyChar()));
+        AgentMove move = AgentMove.getValue(e.getKeyChar());
+        if (move != null) {
+            agentMoveListener.onAgentMoved(move);
+        }
     }
 
     @Override

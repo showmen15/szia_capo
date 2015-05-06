@@ -1,6 +1,5 @@
 package pl.edu.agh.capo.logic;
 
-import pl.edu.agh.capo.logic.common.MeasureResult;
 import pl.edu.agh.capo.logic.common.MeasurementReader;
 
 import java.util.HashMap;
@@ -13,8 +12,7 @@ public class Agent {
 
     private double alpha;
     private Map<Double, Double> vision;
-    private Map<Double, MeasureResult> measureResults;
-    private Map<MeasureResult, Integer> measureCounts;
+    private Map<Double, Double> measureResults;
     private Room room;
 
     public Agent(Room room) {
@@ -52,6 +50,12 @@ public class Agent {
     }
 
     public void setAlpha(double alpha) {
+        while (alpha < -180.0) {
+            alpha += 360.0;
+        }
+        while (alpha > 180.0) {
+            alpha -= 360.0;
+        }
         this.alpha = alpha;
     }
 
@@ -59,12 +63,20 @@ public class Agent {
         return vision;
     }
 
-    public Map<Double, MeasureResult> getMeasureResults() {
+    public Map<Double, Double> getMeasureResults() {
         return measureResults;
     }
 
-    public Map<MeasureResult, Integer> getMeasureCounts() {
-        return measureCounts;
+    public double getAverageMeasureResult() {
+        double sum = 0.0;
+        int count = 0;
+        for (double result : measureResults.values()) {
+            if (result >= 0) {
+                sum += result;
+                count++;
+            }
+        }
+        return sum / count;
     }
 
     public Room getRoom() {
@@ -72,22 +84,12 @@ public class Agent {
     }
 
     public double analyzeMeasure(MeasureAnalyzer analyzer) {
-        measureResults = new HashMap<Double, MeasureResult>();
-        measureCounts = new HashMap<MeasureResult, Integer>();
-
-        measureCounts.put(MeasureResult.VALID, 0);
-        measureCounts.put(MeasureResult.INVALID, 0);
-        measureCounts.put(MeasureResult.IGNORE, 0);
-
+        measureResults = new HashMap<Double, Double>();
         for (Map.Entry<Double, Double> singleVision : vision.entrySet()) {
-            MeasureResult measureResult = analyzer.isMeasureFit(singleVision.getKey() + alpha, singleVision.getValue());
-            measureResults.put(singleVision.getKey(), measureResult);
-            measureCounts.put(measureResult, measureCounts.get(measureResult) + 1);
+            double result = analyzer.isMeasureFit(singleVision.getKey() + alpha, singleVision.getValue());
+            measureResults.put(singleVision.getKey(), result);
         }
 
-        double probability = (double) measureCounts.get(MeasureResult.VALID) /
-                (measureCounts.get(MeasureResult.VALID) + measureCounts.get(MeasureResult.INVALID));
-
-        return probability;
+        return getAverageMeasureResult();
     }
 }

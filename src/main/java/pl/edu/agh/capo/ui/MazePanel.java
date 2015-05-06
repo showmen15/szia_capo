@@ -1,7 +1,6 @@
 package pl.edu.agh.capo.ui;
 
 import pl.edu.agh.capo.logic.Agent;
-import pl.edu.agh.capo.logic.common.MeasureResult;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.Wall;
@@ -58,30 +57,33 @@ public class MazePanel extends JPanel {
         double x = normalizeCoordinate(agent.getX(), minX, ratio);
         double y = normalizeCoordinate(agent.getY(), minY, ratio);
 
-        Map<Double, MeasureResult> measureResults = agent.getMeasureResults();
+        Map<Double, Double> measureResults = agent.getMeasureResults();
         g2.setStroke(new BasicStroke(1));
         for (Map.Entry<Double, Double> vision : agent.getVision().entrySet()) {
-            switch (measureResults.get(vision.getKey())) {
-                case IGNORE:
-                    g2.setColor(Color.yellow);
-                    break;
-                case VALID:
-                    g2.setColor(Color.green);
-                    break;
-                case INVALID:
-                    g2.setColor(Color.orange);
-                    break;
+            double result = measureResults.get(vision.getKey());
+            if (result < 0.0) {
+                g2.setColor(Color.yellow);
+            } else {
+                g2.setColor(countColor(result));
             }
             g2.draw(new Line2D.Double(x, y,
                     getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getKey(), vision.getValue()),
                     getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getKey(), vision.getValue())));
         }
-        g2.setColor(Color.red);
+
+        g2.setColor(Color.blue);
         Ellipse2D.Double ellipse = new Ellipse2D.Double(x - 3.5, y - 3.5, 7.0, 7.0);
         g2.draw(ellipse);
         g2.fill(ellipse);
-        g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(agent.getX(), agent.getAlpha(), 0, 0.1), getVisionYCoordinate(agent.getY(), agent.getAlpha(), 0, 0.1)));
+        g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(agent.getX(), agent.getAlpha(), 0, 0.1),
+                getVisionYCoordinate(agent.getY(), agent.getAlpha(), 0, 0.1)));
         g2.setColor(Color.black);
+    }
+
+    private Color countColor(double result) {
+        Long r = Math.round((255 * (1 - result)));
+        Long g = Math.round((255 * result));
+        return new Color(Integer.valueOf(r.intValue()), Integer.valueOf(g.intValue()), 0);
     }
 
     private Polygon getVisionPolygon(Agent agent) {

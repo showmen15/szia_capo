@@ -3,7 +3,6 @@ package pl.edu.agh.capo.ui;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.MeasureAnalyzer;
 import pl.edu.agh.capo.logic.common.AgentMove;
-import pl.edu.agh.capo.logic.common.MeasureResult;
 import pl.edu.agh.capo.logic.common.MeasurementReader;
 import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
 import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
@@ -16,7 +15,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Map;
 
 public class InfoPanel extends JPanel implements IAgentMoveListener {
 
@@ -31,9 +29,6 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
 
     private int currentMeasureIndex;
     private int currentAgentIndex;
-    private JLabel measureValidCount;
-    private JLabel measureInvalidCount;
-    private JLabel measureIgnoredCount;
     private JLabel agentsLabel;
     private JLabel measuredProbability;
 
@@ -103,14 +98,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
             agent.setY(y);
             double probability = agent.analyzeMeasure(analyzer);
             measuredProbability.setText(String.format("Stosunek: %f", probability));
-
             mazePanel.repaint();
-            Map<MeasureResult, Integer> measureCounts = agent.getMeasureCounts();
-
-            measureValidCount.setText(String.format("Pasujących: %d", measureCounts.get(MeasureResult.VALID)));
-            measureInvalidCount.setText(String.format("Niepasujących: %d", measureCounts.get(MeasureResult.INVALID)));
-            measureIgnoredCount.setText(String.format("Brama: %d", measureCounts.get(MeasureResult.IGNORE)));
-
             setFocusable(true);
             requestFocusInWindow();
         } catch (CoordinateOutOfRoomException ignored) {
@@ -118,7 +106,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     private void buildView() {
-        JPanel buttonPanel = new JPanel(new GridLayout(9, 1));
+        JPanel buttonPanel = new JPanel(new GridLayout(6, 1));
 
         agentsLabel = buildLabel("Agent");
         buttonPanel.add(agentsLabel);
@@ -140,13 +128,6 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
 
         nextMeasureButton = buildButton("Pobierz nowy", nextMeasureButtonListener());
         buttonPanel.add(nextMeasureButton);
-
-        measureValidCount = buildLabel("");
-        measureInvalidCount = buildLabel("");
-        measureIgnoredCount = buildLabel("");
-        buttonPanel.add(measureValidCount);
-        buttonPanel.add(measureInvalidCount);
-        buttonPanel.add(measureIgnoredCount);
 
         measuredProbability = buildLabel("");
         buttonPanel.add(measuredProbability);
