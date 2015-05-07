@@ -1,19 +1,25 @@
 package pl.edu.agh.capo.logic;
 
-import pl.edu.agh.capo.logic.common.MeasurementReader;
+import pl.edu.agh.capo.logic.common.Measure;
+import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.maze.Coordinates;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Agent {
 
     private double x;
     private double y;
-
     private double alpha;
-    private Map<Double, Double> vision;
-    private Map<Double, Double> measureResults;
+
+    private List<Vision> visions = new ArrayList<>();
+
+    private double fitness;
     private Room room;
+
+    private final Random random = new Random();
 
     public Agent(Room room) {
         this.alpha = 0;
@@ -22,11 +28,8 @@ public class Agent {
         y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
     }
 
-    public void setMeasure(MeasurementReader.Measure measure) {
-        this.vision = new HashMap<Double, Double>();
-        for (Map.Entry<Double, Double> singleVision : measure.getVision().entrySet()) {
-            vision.put(singleVision.getKey(), singleVision.getValue() / 1000);
-        }
+    public void setMeasure(Measure measure) {
+        this.visions = measure.getVisions();
     }
 
     public double getX() {
@@ -59,37 +62,58 @@ public class Agent {
         this.alpha = alpha;
     }
 
-    public Map<Double, Double> getVision() {
-        return vision;
+    public List<Vision> getVisions() {
+        return visions;
     }
 
-    public Map<Double, Double> getMeasureResults() {
-        return measureResults;
-    }
-
-    public double getAverageMeasureResult() {
-        double sum = 0.0;
-        int count = 0;
-        for (double result : measureResults.values()) {
-            if (result >= 0) {
-                sum += result;
-                count++;
-            }
-        }
-        return sum / count;
+    public double getFitness() {
+        return fitness;
     }
 
     public Room getRoom() {
         return room;
     }
 
-    public double analyzeMeasure(MeasureAnalyzer analyzer) {
-        measureResults = new HashMap<Double, Double>();
-        for (Map.Entry<Double, Double> singleVision : vision.entrySet()) {
-            double result = analyzer.isMeasureFit(singleVision.getKey() + alpha, singleVision.getValue());
-            measureResults.put(singleVision.getKey(), result);
+    /**
+     * estimates fitness of position based on current visions
+     */
+    private double estimateFitness(FitnessAnalyzer analyzer) {
+        for (Vision vision : visions) {
+            double result = analyzer.estimate(vision.getAngle(), vision.getDistance());
+            vision.setFitness(result);
         }
 
-        return getAverageMeasureResult();
+        return countFitness();
     }
+
+    private double countFitness() {
+        double sum = 0.0;
+        int count = 0;
+        for (Vision vision : visions) {
+            if (vision.getFitness() >= 0) {
+                sum += vision.getFitness();
+                count++;
+            }
+        }
+        return sum / count;
+    }
+
+    public double estimateRandom() {
+        Coordinates coords = room.getRandomPosition();
+        double angle = random.nextDouble() * 360 - 180;
+        double estimated = estimateFitness(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle));
+        if (estimated > fitness) {
+            fitness = estimated;
+            x = coords.getX();
+            y = coords.getY();
+            alpha = angle;
+        }
+        return fitness;
+    }
+
+    public double estimateFitness() {
+        fitness = estimateFitness(new FitnessAnalyzer(room, x, y, alpha));
+        return fitness;
+    }
+
 }

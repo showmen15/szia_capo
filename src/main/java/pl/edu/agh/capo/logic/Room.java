@@ -1,11 +1,13 @@
 package pl.edu.agh.capo.logic;
 
+import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.Wall;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Room {
 
@@ -23,15 +25,17 @@ public class Room {
     private final List<Gate> eastGates;
     private final String spaceId;
 
+    private Random random = new Random();
+
     public Room(List<Wall> walls, List<Gate> gates, String spaceId) {
         this.walls = walls;
         this.gates = gates;
         this.spaceId = spaceId;
 
-        northGates = new ArrayList<Gate>();
-        southGates = new ArrayList<Gate>();
-        westGates = new ArrayList<Gate>();
-        eastGates = new ArrayList<Gate>();
+        northGates = new ArrayList<>();
+        southGates = new ArrayList<>();
+        westGates = new ArrayList<>();
+        eastGates = new ArrayList<>();
 
         findCorners();
         splitGates();
@@ -108,5 +112,14 @@ public class Room {
 
     public boolean coordinatesMatches(double x, double y) {
         return !(x < minX || x > maxX || y < minY || y > maxY);
+    }
+
+    public Coordinates getRandomPosition() {
+        Coordinates coordinates = new Coordinates();
+        double x = random.nextDouble() * (maxX - minX) + minX;
+        double y = random.nextDouble() * (maxY - minY) + minY;
+        coordinates.setX(x);
+        coordinates.setY(y);
+        return coordinates;
     }
 }

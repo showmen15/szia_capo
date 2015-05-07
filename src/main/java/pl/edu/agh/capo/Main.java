@@ -1,23 +1,18 @@
 package pl.edu.agh.capo;
 
+import pl.edu.agh.capo.scheduler.Scheduler;
+import pl.edu.agh.capo.simulation.MeasureFileReader;
+import pl.edu.agh.capo.simulation.MeasureSimulator;
 import pl.edu.agh.capo.ui.CapoMazeVisualizer;
 
 public class Main {
 
-    public static final int PERIOD_TIME = 4000;      //200 ms
+    public static final int PERIOD_TIME = 2000;      //200 ms
 
     public static void main(String[] args) {
-        CapoMazeVisualizer.getInstance().open();
-//        Scheduler scheduler = new Scheduler(PERIOD_TIME, 4);
-//        scheduler.start();
-//
-//        while (true) {
-//            try {
-//                Thread.sleep(PERIOD_TIME);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//            scheduler.update();
-//        }
+        Scheduler scheduler = new Scheduler();
+        MeasureSimulator simulator = new MeasureSimulator(new MeasureFileReader("DaneLabirynt1.csv"), scheduler, PERIOD_TIME);
+        simulator.start();
+        CapoMazeVisualizer.getInstance().open(scheduler, PERIOD_TIME);
     }
 }

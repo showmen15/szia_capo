@@ -1,10 +1,10 @@
-package pl.edu.agh.capo.logic.interfaces;
+package pl.edu.agh.capo.logic.listener;
 
 import pl.edu.agh.capo.logic.common.AgentMove;
 
 public interface IAgentMoveListener {
 
-    public void onAgentMoved(AgentMove move);
+    void onAgentMoved(AgentMove move);
 }
 
 

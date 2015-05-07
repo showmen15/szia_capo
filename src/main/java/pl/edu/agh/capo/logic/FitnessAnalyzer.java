@@ -1,31 +1,28 @@
 package pl.edu.agh.capo.logic;
 
-import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
 import pl.edu.agh.capo.maze.Gate;
 
 import java.util.List;
 
-public class MeasureAnalyzer {
+public class FitnessAnalyzer {
 
     private final static double ACCURACY = 0.2;
 
     private Room room;
     private double x;
     private double y;
+    private double angle;
 
     private double angleNW;
     private double angleNE;
     private double angleSE;
     private double angleSW;
 
-    public MeasureAnalyzer(Room room, double x, double y) throws CoordinateOutOfRoomException {
+    public FitnessAnalyzer(Room room, double x, double y, double angle) {
         this.room = room;
         this.x = x;
         this.y = y;
-
-        if (!room.coordinatesMatches(x, y)) {
-            throw new CoordinateOutOfRoomException();
-        }
+        this.angle = angle;
 
         findLimitAngle();
     }
@@ -49,8 +46,8 @@ public class MeasureAnalyzer {
         return result;
     }
 
-    public double isMeasureFit(double angle, double distance) {
-        double alpha = normalizeAngle(angle);
+    public double estimate(double angle, double distance) {
+        double alpha = normalizeAngle(angle + this.angle);
         if (alpha > 0) {
             if (alpha == 180.0) {
                 return checkMeasureHorizontally(x, y, x, room.getMaxY(), distance, room.getSouthGates());

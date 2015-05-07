@@ -1,41 +1,42 @@
 package pl.edu.agh.capo.ui;
 
 import pl.edu.agh.capo.logic.Agent;
-import pl.edu.agh.capo.logic.MeasureAnalyzer;
 import pl.edu.agh.capo.logic.common.AgentMove;
-import pl.edu.agh.capo.logic.common.MeasurementReader;
-import pl.edu.agh.capo.logic.exception.CoordinateOutOfRoomException;
-import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
+import pl.edu.agh.capo.logic.listener.IAgentMoveListener;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.Space;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
+import pl.edu.agh.capo.scheduler.FitnessTimeDivider;
+import pl.edu.agh.capo.scheduler.Scheduler;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 public class InfoPanel extends JPanel implements IAgentMoveListener {
 
-    private MazePanel mazePanel;
+    private final Scheduler scheduler;
+    private final MazePanel mazePanel;
+    private final int periodTime;
+
     private JButton nextMeasureButton;
     private JButton nextAgentButton;
     private JButton prevAgentButton;
 
-    private java.util.List<Agent> agents;
-
-    private final MeasurementReader measurementReader;
-
-    private int currentMeasureIndex;
-    private int currentAgentIndex;
     private JLabel agentsLabel;
     private JLabel measuredProbability;
 
-    public InfoPanel(MazePanel mazePanel, MeasurementReader measurementReader) {
+    private java.util.List<Agent> agents;
+    private int currentAgentIndex;
+
+
+    public InfoPanel(MazePanel mazePanel, Scheduler scheduler, int periodTime) {
         super();
         this.mazePanel = mazePanel;
-        this.measurementReader = measurementReader;
+        this.scheduler = scheduler;
+        this.periodTime = periodTime;
 
         buildView();
         addKeyListener(new CapoKeyListener(this));
@@ -44,13 +45,16 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     public void updateAgents(MazeMap map) {
-        agents = new ArrayList<Agent>();
+        agents = new ArrayList<>();
+        FitnessTimeDivider fitnessTimeDivider = new FitnessTimeDivider(periodTime, map.getSpaces().size());
         for (Space space : map.getSpaces()) {
             Agent agent = new Agent(MazeHelper.buildRoom(space.getId(), map));
-            agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
             agents.add(agent);
+            fitnessTimeDivider.addAgent(agent);
         }
         mazePanel.setMaze(map);
+        scheduler.setDivider(fitnessTimeDivider);
+        scheduler.setListener(this::onMeasure);
         showAgent(0);
 
         setButtonsEnable(true);
@@ -86,27 +90,24 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
                 agent.setAlpha(agent.getAlpha() + 2);
                 break;
         }
-        measure(x, y);
-    }
 
-    private void measure(double x, double y) {
-        Agent agent = currentAgent();
-
-        try {
-            MeasureAnalyzer analyzer = new MeasureAnalyzer(agent.getRoom(), x, y);
+        if (agent.getRoom().coordinatesMatches(x, y)) {
             agent.setX(x);
             agent.setY(y);
-            double probability = agent.analyzeMeasure(analyzer);
-            measuredProbability.setText(String.format("Stosunek: %f", probability));
-            mazePanel.repaint();
-            setFocusable(true);
-            requestFocusInWindow();
-        } catch (CoordinateOutOfRoomException ignored) {
+            agent.estimateFitness();
+            onMeasure();
         }
     }
 
+    private void onMeasure() {
+        measuredProbability.setText(String.format("Fitnes: %f", currentAgent().getFitness()));
+        mazePanel.repaint();
+        setFocusable(true);
+        requestFocusInWindow();
+    }
+
     private void buildView() {
-        JPanel buttonPanel = new JPanel(new GridLayout(6, 1));
+        JPanel buttonPanel = new JPanel(new GridLayout(5, 1));
 
         agentsLabel = buildLabel("Agent");
         buttonPanel.add(agentsLabel);
@@ -123,14 +124,21 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
 
         buttonPanel.add(Box.createHorizontalStrut(5)); // Fixed width invisible separator.
 
-        JLabel measuresLabel = buildLabel("Odczyty");
-        buttonPanel.add(measuresLabel);
+/*        JLabel measuresLabel = buildLabel("Odczyty");
+        buttonPanel.add(measuresLabel);*/
 
-        nextMeasureButton = buildButton("Pobierz nowy", nextMeasureButtonListener());
-        buttonPanel.add(nextMeasureButton);
+/*        nextMeasureButton = buildButton("Pobierz nowy", nextMeasureButtonListener());
+        buttonPanel.add(nextMeasureButton);*/
 
         measuredProbability = buildLabel("");
         buttonPanel.add(measuredProbability);
+
+        JCheckBox checkBox = new JCheckBox("Pobieraj pomiary cyklicznie co 2 sek.");
+        checkBox.setMnemonic(KeyEvent.VK_C);
+        checkBox.setSelected(true);
+        checkBox.addActionListener(a -> scheduler.setUpdateMeasures(checkBox.isSelected()));
+
+        buttonPanel.add(checkBox);
 
         this.add(buttonPanel);
 
@@ -142,7 +150,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     private void setButtonsEnable(boolean enable) {
-        nextMeasureButton.setEnabled(enable);
+        //nextMeasureButton.setEnabled(enable);
         nextAgentButton.setEnabled(enable);
         prevAgentButton.setEnabled(enable);
     }
@@ -159,38 +167,30 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         return label;
     }
 
-    private ActionListener nextMeasureButtonListener() {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentMeasureIndex = (currentMeasureIndex + 1) % measurementReader.getSize();
-                for (Agent agent : agents) {
-                    agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
-                }
-                Agent agent = currentAgent();
-                measure(agent.getX(), agent.getY());
-            }
-        };
-    }
-
+    /* private ActionListener nextMeasureButtonListener() {
+         return new ActionListener() {
+             @Override
+             public void actionPerformed(ActionEvent e) {
+                 currentMeasureIndex = (currentMeasureIndex + 1) % measurementReader.getSize();
+                 for (Agent agent : agents) {
+                     agent.setMeasure(measurementReader.getMeasure(currentMeasureIndex));
+                 }
+                 Agent agent = currentAgent();
+                 onMeasure(agent.getX(), agent.getY());
+             }
+         };
+     }
+ */
     private ActionListener nextAgentButtonListener() {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showAgent((currentAgentIndex + 1) % agents.size());
-            }
-        };
+        return e -> showAgent((currentAgentIndex + 1) % agents.size());
     }
 
     private ActionListener prevAgentButtonListener() {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentAgentIndex > 0) {
-                    showAgent(currentAgentIndex - 1);
-                } else {
-                    showAgent(currentAgentIndex + agents.size() - 1);
-                }
+        return e -> {
+            if (currentAgentIndex > 0) {
+                showAgent(currentAgentIndex - 1);
+            } else {
+                showAgent(currentAgentIndex + agents.size() - 1);
             }
         };
     }
@@ -200,6 +200,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         Agent agent = currentAgent();
         agentsLabel.setText(String.format("Agent - %s", agent.getRoom().getSpaceId()));
         mazePanel.setAgent(agent);
-        measure(agent.getX(), agent.getY());
+        onMeasure();
     }
+
 }

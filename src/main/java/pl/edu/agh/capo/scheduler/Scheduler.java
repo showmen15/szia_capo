@@ -1,86 +1,96 @@
 package pl.edu.agh.capo.scheduler;
 
-import java.util.ArrayList;
-import java.util.Collections;
+
+import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.common.Measure;
+
 import java.util.List;
-import java.util.Random;
 
 public class Scheduler {
 
-    public static final int OPERATION_TIME = 500;
+    private UpdateMeasureListener listener;
 
-    private final int periodTime;
-    private final int count;
+    private FitnessTimeDivider divider;
+    private boolean updateMeasures = true;
 
-    private final Worker worker = new Worker();
-    private final List<Integer> printerRuntimes;
-
-    private final Random random = new Random();
-
-    public Scheduler(int periodTime, int count) {
-        this.periodTime = periodTime;
-        this.count = count;
-        printerRuntimes = Collections.synchronizedList(new ArrayList<Integer>(count));
-        initializeRuntimes(count);
+    public void setDivider(FitnessTimeDivider divider) {
+        this.divider = divider;
     }
 
-    private void initializeRuntimes(int count) {
-        for (int i = 0; i < count; i++) {
-            printerRuntimes.add(periodTime / count);
+    public void update(Measure measure) {
+        if (divider != null) {
+            divider.updateFitnesses();
+            new Thread(new Worker(divider.getTimes(), measure)).start();
+            divider.recalculate();
         }
     }
 
-    private void startWorker() {
-        new Thread(worker).start();
+    public void setUpdateMeasures(boolean updateMeasures) {
+        this.updateMeasures = updateMeasures;
     }
 
-    public void start() {
-        startWorker();
-    }
-
-    public void update() {
-        //update data
-        startWorker();
-        recalculatePrintersRuntime();
-    }
-
-    private void recalculatePrintersRuntime() {
-        System.out.println("Recalculating...");
-        int leftTime = periodTime;
-        for (int i = 0; i < count - 1; i++) {
-            int time = random.nextInt(count) * OPERATION_TIME;
-            if (time > leftTime) {
-                time = leftTime;
-            }
-            printerRuntimes.set(i, time);
-            leftTime -= time;
-        }
-        printerRuntimes.set(count - 1, leftTime);
-    }
-
-    private int getPrinterRuntime(int index) {
-        return printerRuntimes.get(index);
+    public void setListener(UpdateMeasureListener listener) {
+        this.listener = listener;
     }
 
     private class Worker implements Runnable {
 
-        private void count(int id) {
-            int numberOfIterations = getPrinterRuntime(id) / OPERATION_TIME;
-            for (int i = 0; i < numberOfIterations; i++) {
-                try {
-                    Thread.sleep(490);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        private final List<FitnessTimeDivider.AgentInfo> infos;
+
+        private Agent agent;
+        private int time;
+        private long startTime;
+
+        private final Measure measure;
+
+        private Worker(List<FitnessTimeDivider.AgentInfo> infos, Measure measure) {
+            this.infos = infos;
+            this.measure = measure;
+        }
+
+        private void updateMeasure(FitnessTimeDivider.AgentInfo info) {
+            this.startTime = System.currentTimeMillis();
+            this.agent = info.getAgent();
+            this.time = info.getTime();
+            if (updateMeasures) {
+                agent.setMeasure(measure);
+                agent.estimateFitness();
+            }
+
+            try {
+                checkTime();
+                while (true) {
+                    agent.estimateRandom();
+                    checkTime();
                 }
-                System.out.println(id);
+            } catch (TimeoutException e) {
             }
         }
 
         @Override
         public void run() {
-            for (int id = 0; id < count; id++) {
-                count(id);
+            System.out.println("starting worker with " + infos.size());
+            long time = System.currentTimeMillis();
+            infos.forEach(this::updateMeasure);
+            if (listener != null) {
+                new Thread(listener::onUpdate).start();
+            }
+            long end = System.currentTimeMillis();
+            System.out.println("tookk: " + (end - time));
+        }
+
+        private void checkTime() throws TimeoutException {
+            long diff = System.currentTimeMillis() - startTime;
+            if (diff >= time) {
+                throw new TimeoutException();
             }
         }
+
+        private class TimeoutException extends Exception {
+        }
+    }
+
+    public interface UpdateMeasureListener {
+        void onUpdate();
     }
 }

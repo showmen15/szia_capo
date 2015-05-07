@@ -1,7 +1,7 @@
 package pl.edu.agh.capo.ui;
 
 import pl.edu.agh.capo.logic.common.AgentMove;
-import pl.edu.agh.capo.logic.interfaces.IAgentMoveListener;
+import pl.edu.agh.capo.logic.listener.IAgentMoveListener;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
