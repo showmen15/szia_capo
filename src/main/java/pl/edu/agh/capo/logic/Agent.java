@@ -5,8 +5,10 @@ import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.maze.Coordinates;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class Agent {
 
@@ -95,7 +97,7 @@ public class Agent {
                 count++;
             }
         }
-        return sum / count;
+        return sum/count;
     }
 
     public double estimateRandom() {

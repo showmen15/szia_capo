@@ -12,7 +12,7 @@ import java.util.List;
 
 public class MeasureFileReader implements Iterator<Measure> {
 
-    private static final int READ_JUMP = 1;     //24 for 30 readings
+    private static final int READ_JUMP = 24;     //24 for 30 readings
 
     private Iterator<Measure> measures;
 

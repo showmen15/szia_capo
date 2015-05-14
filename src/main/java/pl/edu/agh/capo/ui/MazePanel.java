@@ -12,6 +12,8 @@ import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class MazePanel extends JPanel {
 
@@ -50,27 +52,27 @@ public class MazePanel extends JPanel {
     }
 
     private void printAgent(Agent agent, Graphics2D g2) {
-        //g2.setColor(new Color(0, 255, 0, 127));
-        //Polygon vision = getVisionPolygon(agent);
-        //g2.draw(vision);
-        //g2.fill(vision);
+        g2.setColor(countColor(agent.getFitness()));
+        Polygon vision = getVisionPolygon(agent.getVisions());
+        g2.draw(vision);
+        g2.fill(vision);
 
         double x = normalizeCoordinate(agent.getX(), minX, ratio);
         double y = normalizeCoordinate(agent.getY(), minY, ratio);
 
-        g2.setStroke(new BasicStroke(1));
-        java.util.List<Vision> visions = new ArrayList<>(agent.getVisions());
-        for (Vision vision : visions) {
-            double result = vision.getFitness();
-            if (result < 0.0) {
-                g2.setColor(Color.yellow);
-            } else {
-                g2.setColor(countColor(result));
-            }
-            g2.draw(new Line2D.Double(x, y,
-                    getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getAngle(), vision.getDistance()),
-                    getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getAngle(), vision.getDistance())));
-        }
+//        g2.setStroke(new BasicStroke(1));
+//        java.util.List<Vision> visions = new ArrayList<>(agent.getBestVisions());
+//        for (Vision vision : visions) {
+//            double result = vision.getFitness();
+//            if (result < 0.0) {
+//                g2.setColor(Color.yellow);
+//            } else {
+//                g2.setColor(countColor(result));
+//            }
+//            g2.draw(new Line2D.Double(x, y,
+//                    getVisionXCoordinate(agent.getX(),agent.getAlpha(), vision.getAngle(), vision.getDistance()),
+//                    getVisionYCoordinate(agent.getY(),agent.getAlpha(), vision.getAngle(), vision.getDistance())));
+//        }
 
         g2.setColor(Color.blue);
         Ellipse2D.Double ellipse = new Ellipse2D.Double(x - 3.5, y - 3.5, 7.0, 7.0);
@@ -81,10 +83,41 @@ public class MazePanel extends JPanel {
         g2.setColor(Color.black);
     }
 
+    private Polygon getVisionPolygon(java.util.List<Vision> visions){
+
+        Collections.sort(visions, new Comparator<Vision>() {
+            @Override
+            public int compare(Vision o1, Vision o2) {
+                double diff = o1.getAngle() - o2.getAngle();
+                if (diff > 0) return 1;
+                if (diff < 0) return -1;
+                return 0;
+            }
+        });
+
+        int[] xpoints = new int[visions.size() + 2];
+        int[] ypoints = new int[visions.size() + 2];
+        Long x = Math.round(normalizeCoordinate(agent.getX(), minX, ratio));
+        xpoints[0] = Integer.valueOf(x.intValue());
+        Long y = Math.round(normalizeCoordinate(agent.getY(), minY, ratio));
+        ypoints[0] = Integer.valueOf(y.intValue());
+
+        for (int i = 0; i < visions.size(); i++){
+            Vision vision = visions.get(i);
+            x = Math.round(getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getAngle(), vision.getDistance()));
+            y = Math.round(getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getAngle(), vision.getDistance()));
+            xpoints[i+1] = Integer.valueOf(x.intValue());
+            ypoints[i+1] = Integer.valueOf(y.intValue());
+        }
+        xpoints[xpoints.length -1] = xpoints[0];
+        ypoints[ypoints.length -1] = ypoints[0];
+        return new Polygon(xpoints, ypoints, visions.size());
+    }
+
     private Color countColor(double result) {
         Long r = Math.round((255 * (1 - result)));
         Long g = Math.round((255 * result));
-        return new Color(Integer.valueOf(r.intValue()), Integer.valueOf(g.intValue()), 0);
+        return new Color(Integer.valueOf(r.intValue()), Integer.valueOf(g.intValue()), 0, 127);
     }
 
     private double getVisionXCoordinate(double agentX, double agentAlpha, double visionAlpha, double visionRange) {
