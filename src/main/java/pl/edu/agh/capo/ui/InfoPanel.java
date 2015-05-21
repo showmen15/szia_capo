@@ -107,7 +107,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     private void buildView() {
-        JPanel buttonPanel = new JPanel(new GridLayout(5, 1));
+        JPanel buttonPanel = new JPanel(new GridLayout(6, 1));
 
         agentsLabel = buildLabel("Agent");
         buttonPanel.add(agentsLabel);
