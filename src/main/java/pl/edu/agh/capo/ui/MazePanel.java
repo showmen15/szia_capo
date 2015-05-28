@@ -61,7 +61,7 @@ public class MazePanel extends JPanel {
         double y = normalizeCoordinate(agent.getY(), minY, ratio);
 
 //        g2.setStroke(new BasicStroke(1));
-//        java.util.List<Vision> visions = new ArrayList<>(agent.getBestVisions());
+//        java.util.List<Vision> visions = new ArrayList<>(agent.getVisions());
 //        for (Vision vision : visions) {
 //            double result = vision.getFitness();
 //            if (result < 0.0) {

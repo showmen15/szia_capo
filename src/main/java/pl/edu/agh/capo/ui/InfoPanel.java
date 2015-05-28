@@ -1,10 +1,10 @@
 package pl.edu.agh.capo.ui;
 
 import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.Room;
 import pl.edu.agh.capo.logic.common.AgentMove;
 import pl.edu.agh.capo.logic.listener.IAgentMoveListener;
 import pl.edu.agh.capo.maze.MazeMap;
-import pl.edu.agh.capo.maze.Space;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
 import pl.edu.agh.capo.scheduler.FitnessTimeDivider;
 import pl.edu.agh.capo.scheduler.Scheduler;
@@ -21,7 +21,6 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     private final MazePanel mazePanel;
     private final int periodTime;
 
-    private JButton nextMeasureButton;
     private JButton nextAgentButton;
     private JButton prevAgentButton;
 
@@ -47,8 +46,8 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     public void updateAgents(MazeMap map) {
         agents = new ArrayList<>();
         FitnessTimeDivider fitnessTimeDivider = new FitnessTimeDivider(periodTime, map.getSpaces().size());
-        for (Space space : map.getSpaces()) {
-            Agent agent = new Agent(MazeHelper.buildRoom(space.getId(), map));
+        for (Room room : MazeHelper.buildRooms(map)){
+            Agent agent = new Agent(room);
             agents.add(agent);
             fitnessTimeDivider.addAgent(agent);
         }

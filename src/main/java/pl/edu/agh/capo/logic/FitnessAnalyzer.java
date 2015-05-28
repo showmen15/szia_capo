@@ -7,6 +7,7 @@ import java.util.List;
 public class FitnessAnalyzer {
 
     private final static double ACCURACY = 0.2;
+    private final static double MAX_RANGE = 5.0;
 
     private Room room;
     private double x;
@@ -47,92 +48,110 @@ public class FitnessAnalyzer {
     }
 
     public double estimate(double angle, double distance) {
+        boolean overMaxRange = distance > MAX_RANGE;
+        if (overMaxRange){
+            System.out.println(distance);
+        }
+        return estimate(angle, distance, overMaxRange);
+    }
+
+    private double estimate(double angle, double distance, boolean overMaxRange) {
         double alpha = normalizeAngle(angle + this.angle);
         if (alpha > 0) {
             if (alpha == 180.0) {
-                return checkMeasureHorizontally(x, y, x, room.getMaxY(), distance, room.getSouthGates());
+                return checkMeasureHorizontally(x, y, x, room.getMaxY(), distance, angle, room.getSouthGates(), overMaxRange);
             } else if (alpha > angleSE) {
                 double x1 = x - (Math.tan(Math.toRadians(alpha)) * (room.getMaxY() - y));
-                return checkMeasureHorizontally(x, y, x1, room.getMaxY(), distance, room.getSouthGates());
+                return checkMeasureHorizontally(x, y, x1, room.getMaxY(), distance, angle, room.getSouthGates(), overMaxRange);
             } else if (alpha == angleSE) {
-                return isMeasureWithAccuracy(distance, getDistance(x, y, room.getMaxX(), room.getMaxY()));
+                return countMeasureEstimation(distance, getDistance(x, y, room.getMaxX(), room.getMaxY()), overMaxRange);
             } else if (alpha > 90.0) {
                 double y1 = y + (Math.tan(Math.toRadians(alpha - 90.0)) * (room.getMaxX() - x));
-                return checkMeasureVerically(x, y, room.getMaxX(), y1, distance, room.getEastGates());
+                return checkMeasureVertically(x, y, room.getMaxX(), y1, distance, angle, room.getEastGates(), overMaxRange);
             } else if (alpha == 90.0) {
-                return checkMeasureHorizontally(x, y, room.getMaxX(), y, distance, room.getEastGates());
+                return checkMeasureHorizontally(x, y, room.getMaxX(), y, distance, angle, room.getEastGates(), overMaxRange);
             } else if (alpha > angleNE) {
                 double y1 = y - (Math.tan(Math.toRadians(90.0 - alpha)) * (room.getMaxX() - x));
-                return checkMeasureVerically(x, y, room.getMaxX(), y1, distance, room.getEastGates());
+                return checkMeasureVertically(x, y, room.getMaxX(), y1, distance, angle, room.getEastGates(), overMaxRange);
             } else if (alpha == angleNE) {
-                return isMeasureWithAccuracy(distance, getDistance(x, y, room.getMaxX(), room.getMinY()));
+                return countMeasureEstimation(distance, getDistance(x, y, room.getMaxX(), room.getMinY()), overMaxRange);
             } else {
                 double x1 = (Math.tan(Math.toRadians(alpha)) * (y - room.getMinY())) + x;
-                return checkMeasureHorizontally(x, y, x1, room.getMinY(), distance, room.getNorthGates());
+                return checkMeasureHorizontally(x, y, x1, room.getMinY(), distance, angle, room.getNorthGates(), overMaxRange);
             }
         } else if (alpha < 0) {
             if (alpha == -180.0) {
-                return checkMeasureHorizontally(x, y, x, room.getMaxY(), distance, room.getSouthGates());
+                return checkMeasureHorizontally(x, y, x, room.getMaxY(), distance, angle, room.getSouthGates(), overMaxRange);
             } else if (alpha < angleSW) {
                 double x1 = x - (Math.tan(Math.toRadians(alpha)) * (room.getMaxY() - y));
-                return checkMeasureHorizontally(x, y, x1, room.getMaxY(), distance, room.getSouthGates());
+                return checkMeasureHorizontally(x, y, x1, room.getMaxY(), distance, angle, room.getSouthGates(), overMaxRange);
             } else if (alpha == angleSW) {
-                return isMeasureWithAccuracy(distance, getDistance(x, y, room.getMinX(), room.getMaxY()));
+                return countMeasureEstimation(distance, getDistance(x, y, room.getMinX(), room.getMaxY()), overMaxRange);
             } else if (alpha < -90.0) {
                 double y1 = y - (Math.tan(Math.toRadians(90 + alpha)) * (x - room.getMinX()));
-                return checkMeasureVerically(x, y, room.getMinX(), y1, distance, room.getWestGates());
+                return checkMeasureVertically(x, y, room.getMinX(), y1, distance, angle, room.getWestGates(), overMaxRange);
             } else if (alpha == -90.0) {
-                return checkMeasureHorizontally(x, y, room.getMinX(), y, distance, room.getWestGates());
+                return checkMeasureHorizontally(x, y, room.getMinX(), y, distance, angle, room.getWestGates(), overMaxRange);
             } else if (alpha < angleNW) {
                 double y1 = y - (Math.tan(Math.toRadians(90 + alpha)) * (x - room.getMinX()));
-                return checkMeasureVerically(x, y, room.getMinX(), y1, distance, room.getWestGates());
+                return checkMeasureVertically(x, y, room.getMinX(), y1, distance, angle, room.getWestGates(), overMaxRange);
             } else if (alpha == angleNW) {
-                return isMeasureWithAccuracy(distance, getDistance(x, y, room.getMinX(), room.getMinY()));
+                return countMeasureEstimation(distance, getDistance(x, y, room.getMinX(), room.getMinY()), overMaxRange);
             } else {
                 double x1 = (Math.tan(Math.toRadians(alpha)) * (y - room.getMinY())) + x;
-                return checkMeasureHorizontally(x, y, x1, room.getMinY(), distance, room.getNorthGates());
+                return checkMeasureHorizontally(x, y, x1, room.getMinY(), distance, angle, room.getNorthGates(), overMaxRange);
             }
         } else {
-            return checkMeasureHorizontally(x, y, x, room.getMinY(), distance, room.getNorthGates());
+            return checkMeasureHorizontally(x, y, x, room.getMinY(), distance, angle, room.getNorthGates(), overMaxRange);
         }
     }
 
-    private double checkMeasureHorizontally(double agentX, double agentY, double roomX, double roomY, double distance, List<Gate> gates) {
-        if (isMeasureInGateHorizontally(roomX, gates)) {
-            return -1.0;
+    private double checkMeasureHorizontally(double agentX, double agentY, double roomX, double roomY, double distance, double angle, List<Gate> gates, boolean overMaxRange) {
+        double distanceToWall = getDistance(agentX, agentY, roomX, roomY);
+        double estimation = getEstimationIfMeasureInGateHorizontally(roomX, roomY, angle, distance, gates, distanceToWall, overMaxRange);
+        if (estimation < 0) {
+            return countMeasureEstimation(distance, distanceToWall, overMaxRange);
         }
-        double realDistance = getDistance(agentX, agentY, roomX, roomY);
-        return isMeasureWithAccuracy(distance, realDistance);
+        return estimation;
     }
 
-    private double checkMeasureVerically(double agentX, double agentY, double roomX, double roomY, double distance, List<Gate> gates) {
-        if (isMeasureInGateVertically(roomY, gates)) {
-            return -1.0;
+    private double checkMeasureVertically(double agentX, double agentY, double roomX, double roomY, double distance, double angle, List<Gate> gates, boolean overMaxRange) {
+        double distanceToWall = getDistance(agentX, agentY, roomX, roomY);
+        double estimation = getEstimationIfMeasureInGateVertically(roomX, roomY, angle, distance, gates, distanceToWall, overMaxRange);
+        if (estimation < 0) {
+            return countMeasureEstimation(distance, distanceToWall, overMaxRange);
         }
-        double realDistance = getDistance(agentX, agentY, roomX, roomY);
-        return isMeasureWithAccuracy(distance, realDistance);
+        return estimation;
     }
 
-    private boolean isMeasureInGateHorizontally(double x, List<Gate> gates) {
+    private double estimateInRoomBehindGate(Room room, double x, double y, double angle, double distance, boolean overMaxRange) {
+        if (distance < -ACCURACY) {
+            return 0;
+        }
+        FitnessAnalyzer fitnessAnalyzer = new FitnessAnalyzer(room, x, y, this.angle);
+        return fitnessAnalyzer.estimate(angle, distance, overMaxRange);
+    }
+
+    private double getEstimationIfMeasureInGateHorizontally(double x, double y, double angle, double distance, List<Gate> gates, double distanceToWall, boolean overMaxRange) {
         for (Gate gate : gates) {
             double start = Math.min(gate.getFrom().getX(), gate.getTo().getX());
             double end = Math.max(gate.getFrom().getX(), gate.getTo().getX());
             if (x > start && x < end) {
-                return true;
+                return estimateInRoomBehindGate(room.getRoomBehindGate(gate), x, y, angle, (distance - distanceToWall), overMaxRange);
             }
         }
-        return false;
+        return -1;
     }
 
-    private boolean isMeasureInGateVertically(double y, List<Gate> gates) {
+    private double getEstimationIfMeasureInGateVertically(double x, double y, double angle, double distance, List<Gate> gates, double distanceToWall, boolean overMaxRange) {
         for (Gate gate : gates) {
             double start = Math.min(gate.getFrom().getY(), gate.getTo().getY());
             double end = Math.max(gate.getFrom().getY(), gate.getTo().getY());
             if (y > start && y < end) {
-                return true;
+                return estimateInRoomBehindGate(room.getRoomBehindGate(gate), x, y, angle, (distance - distanceToWall), overMaxRange);
             }
         }
-        return false;
+        return -1;
     }
 
     private double getDistance(double x1, double y1, double x2, double y2) {
@@ -141,9 +160,13 @@ public class FitnessAnalyzer {
         return Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
     }
 
-    private double isMeasureWithAccuracy(double x, double y) {
-        double diff = Math.abs(x - y);
-        if (Math.abs(x - y) > ACCURACY) {
+    private double countMeasureEstimation(double distance, double distanceToWall, boolean overMaxRange) {
+        if (overMaxRange){
+            return  (distanceToWall >= distance) ? 0.0 : 1.0;
+        }
+
+        double diff = Math.abs(distanceToWall - distance);
+        if (diff > ACCURACY) {
             return 0.0;
         }
         return 1.0 - (diff / ACCURACY);

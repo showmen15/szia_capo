@@ -76,7 +76,7 @@ public class Scheduler {
                 new Thread(listener::onUpdate).start();
             }
             long end = System.currentTimeMillis();
-            System.out.println("tookk: " + (end - time));
+            System.out.println("took: " + (end - time));
         }
 
         private void checkTime() throws TimeoutException {
