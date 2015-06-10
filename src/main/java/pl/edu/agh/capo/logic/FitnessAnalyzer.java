@@ -49,9 +49,6 @@ public class FitnessAnalyzer {
 
     public double estimate(double angle, double distance) {
         boolean overMaxRange = distance > MAX_RANGE;
-        if (overMaxRange){
-            System.out.println(distance);
-        }
         return estimate(angle, distance, overMaxRange);
     }
 

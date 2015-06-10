@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class InfoPanel extends JPanel implements IAgentMoveListener {
 
@@ -29,6 +30,8 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
 
     private java.util.List<Agent> agents;
     private int currentAgentIndex;
+    private JCheckBox bestAgentCheckbox;
+    private JCheckBox measureCheckbox;
 
 
     public InfoPanel(MazePanel mazePanel, Scheduler scheduler, int periodTime) {
@@ -99,6 +102,18 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     private void onMeasure() {
+        if (bestAgentCheckbox.isSelected()) {
+            final Comparator<Agent> comp = (a1, a2) -> Double.compare(a1.getFitness(), a2.getFitness());
+            Agent best = agents.stream()
+                    .max(comp)
+                    .get();
+            showAgent(agents.indexOf(best));
+        } else {
+            updateView();
+        }
+    }
+
+    private void updateView() {
         measuredProbability.setText(String.format("Fitnes: %f", currentAgent().getFitness()));
         mazePanel.repaint();
         setFocusable(true);
@@ -132,12 +147,15 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         measuredProbability = buildLabel("");
         buttonPanel.add(measuredProbability);
 
-        JCheckBox checkBox = new JCheckBox("Pobieraj pomiary cyklicznie co 2 sek.");
-        checkBox.setMnemonic(KeyEvent.VK_C);
-        checkBox.setSelected(true);
-        checkBox.addActionListener(a -> scheduler.setUpdateMeasures(checkBox.isSelected()));
+        measureCheckbox = buildCheckbox("Pobieraj pomiary cyklicznie co 2 sek.");
+        measureCheckbox.addActionListener(a -> scheduler.setUpdateMeasures(measureCheckbox.isSelected()));
 
-        buttonPanel.add(checkBox);
+        buttonPanel.add(measureCheckbox);
+
+        bestAgentCheckbox = buildCheckbox("Pokazuj najlepszego agenta");
+        bestAgentCheckbox.addActionListener(a -> showBestAgent(bestAgentCheckbox.isSelected()));
+
+        buttonPanel.add(bestAgentCheckbox);
 
         this.add(buttonPanel);
 
@@ -148,16 +166,35 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         this.invalidate();
     }
 
+    private void showBestAgent(boolean isSelected) {
+        enableGoToAgentButtons(!isSelected);
+    }
+
     private void setButtonsEnable(boolean enable) {
         //nextMeasureButton.setEnabled(enable);
-        nextAgentButton.setEnabled(enable);
-        prevAgentButton.setEnabled(enable);
+        bestAgentCheckbox.setEnabled(enable);
+        measureCheckbox.setEnabled(enable);
+        enableGoToAgentButtons(enable);
+    }
+
+    private void enableGoToAgentButtons(boolean enable) {
+        if (!bestAgentCheckbox.isSelected() || !enable) {
+            nextAgentButton.setEnabled(enable);
+            prevAgentButton.setEnabled(enable);
+        }
     }
 
     private JButton buildButton(String title, ActionListener listener) {
         JButton button = new JButton(title);
         button.addActionListener(listener);
         return button;
+    }
+
+    private JCheckBox buildCheckbox(String title) {
+        JCheckBox checkBox = new JCheckBox(title);
+        checkBox.setMnemonic(KeyEvent.VK_C);
+        checkBox.setSelected(true);
+        return checkBox;
     }
 
     private JLabel buildLabel(String text) {
@@ -199,7 +236,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         Agent agent = currentAgent();
         agentsLabel.setText(String.format("Agent - %s", agent.getRoom().getSpaceId()));
         mazePanel.setAgent(agent);
-        onMeasure();
+        updateView();
     }
 
 }
