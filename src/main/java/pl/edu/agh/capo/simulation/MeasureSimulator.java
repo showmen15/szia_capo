@@ -32,6 +32,10 @@ public class MeasureSimulator implements Runnable {
 
     @Override
     public void run() {
-        scheduler.update(measures.next());
+        if (scheduler.isUpdateMeasures()) {
+            scheduler.update(measures.next());
+        } else {
+            scheduler.update(null);
+        }
     }
 }

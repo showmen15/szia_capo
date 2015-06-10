@@ -16,12 +16,13 @@ public class MeasureFileReader implements Iterator<Measure> {
 
     private Iterator<Measure> measures;
 
+    private List<Measure> list = new ArrayList<>();
+
     public MeasureFileReader(String filePath) {
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(getClass().getClassLoader().getResource(filePath).getFile()));
             String line;
-            List<Measure> list = new ArrayList<>();
             while ((line = br.readLine()) != null) {
                 list.add(createMeasure(line));
             }
@@ -58,6 +59,9 @@ public class MeasureFileReader implements Iterator<Measure> {
 
     @Override
     public Measure next() {
+        if (!measures.hasNext()) {
+            measures = list.iterator();
+        }
         return measures.next();
     }
 

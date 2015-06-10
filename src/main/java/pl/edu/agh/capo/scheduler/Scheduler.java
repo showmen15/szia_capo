@@ -29,6 +29,11 @@ public class Scheduler {
         this.updateMeasures = updateMeasures;
     }
 
+    public boolean isUpdateMeasures() {
+        return updateMeasures;
+    }
+
+
     public void setListener(UpdateMeasureListener listener) {
         this.listener = listener;
     }
@@ -52,7 +57,7 @@ public class Scheduler {
             this.startTime = System.currentTimeMillis();
             this.agent = info.getAgent();
             this.time = info.getTime();
-            if (updateMeasures) {
+            if (updateMeasures && measure != null) {
                 agent.setMeasure(measure);
                 agent.estimateFitness();
             }
@@ -76,7 +81,7 @@ public class Scheduler {
                 new Thread(listener::onUpdate).start();
             }
             long end = System.currentTimeMillis();
-            System.out.println("tookk: " + (end - time));
+            System.out.println("took: " + (end - time));
         }
 
         private void checkTime() throws TimeoutException {
