@@ -7,6 +7,7 @@ import pl.edu.agh.capo.maze.helper.MazeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class Room {
@@ -26,6 +27,7 @@ public class Room {
     private final String spaceId;
 
     private Random random = new Random();
+    private Map<String, Room> gateRooms;
 
     public Room(List<Wall> walls, List<Gate> gates, String spaceId) {
         this.walls = walls;
@@ -121,5 +123,13 @@ public class Room {
         coordinates.setX(x);
         coordinates.setY(y);
         return coordinates;
+    }
+
+    public void setGateRooms(Map<String, Room> gateRooms) {
+        this.gateRooms = gateRooms;
+    }
+
+    public Room getRoomBehindGate(Gate gate){
+        return gateRooms.get(gate.getId());
     }
 }

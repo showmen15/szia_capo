@@ -4,16 +4,49 @@ import pl.edu.agh.capo.logic.Room;
 import pl.edu.agh.capo.maze.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MazeHelper {
 
-    public static Room buildRoom(String spaceId, MazeMap maze) {
-        return new Room(getRoomWalls(spaceId, maze), getRoomGates(spaceId, maze), spaceId);
+    public static List<Room> buildRooms(MazeMap maze) {
+        List<Room> rooms = new ArrayList<>();
+        for (Space space : maze.getSpaces()) {
+            Room room = new Room(getRoomWalls(space.getId(), maze), getRoomGates(space.getId(), maze), space.getId());
+            rooms.add(room);
+        }
+        for (Room room : rooms){
+            Map<String, Room> gateRooms = new HashMap<>();
+            for (Gate gate : room.getGates()){
+                Room nextRoom = findRoom(gate.getId(), room.getSpaceId(), rooms, maze);
+                gateRooms.put(gate.getId(), nextRoom);
+            }
+            room.setGateRooms(gateRooms);
+        }
+        return rooms;
+    }
+
+    private static Room findRoom(String gateId, String roomId, List<Room> rooms, MazeMap maze){
+        for (SpaceGate spaceGate : maze.getSpaceGates()){
+            if (spaceGate.getGateId().equals(gateId) && !spaceGate.getSpaceId().equals(roomId)){
+                return findRoom(spaceGate.getSpaceId(), rooms);
+            }
+        }
+        return null;
+    }
+
+    private static Room findRoom(String id, List<Room> rooms){
+        for (Room room : rooms){
+            if (room.getSpaceId().equals(id)){
+                return room;
+            }
+        }
+        return null;
     }
 
     private static List<Gate> getRoomGates(String spaceId, MazeMap maze) {
-        List<Gate> gates = new ArrayList<Gate>();
+        List<Gate> gates = new ArrayList<>();
         for (SpaceGate spaceGate : maze.getSpaceGates()){
             if (!spaceGate.getSpaceId().equals(spaceId)){
                 continue;
@@ -37,7 +70,7 @@ public class MazeHelper {
     }
 
     private static List<Wall> getRoomWalls(String spaceId, MazeMap maze) {
-        List<Wall> walls = new ArrayList<Wall>();
+        List<Wall> walls = new ArrayList<>();
         for (SpaceWall spaceWall : maze.getSpaceWalls()){
             if (!spaceWall.getSpaceId().equals(spaceId)){
                 continue;

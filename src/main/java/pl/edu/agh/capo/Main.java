@@ -7,7 +7,7 @@ import pl.edu.agh.capo.ui.CapoMazeVisualizer;
 
 public class Main {
 
-    public static final int PERIOD_TIME = 200;      //200 ms
+    public static final int PERIOD_TIME = 2000;      //200 ms
 
     public static void main(String[] args) {
         Scheduler scheduler = new Scheduler();
