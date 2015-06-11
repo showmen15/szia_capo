@@ -35,22 +35,37 @@ public class FitnessTimeDivider {
     public List<AgentInfo> getTimes() {
         return agentInfos.stream()
                 .filter(p -> p.getTime() > 0)
+                .map(AgentInfo::copy)
                 .collect(Collectors.toList());
     }
 
     public void recalculate() {
         System.out.println("Recalculating...");
-        synchronized (agentInfos) {
-            if (fitnessSum > 0.0) {
-                agentInfos.forEach(i -> i.setTime((int) (periodTime * i.getFitness() / fitnessSum)));
-            }
+        if (fitnessSum > 0.0) {
+            final int timeToDivide = calculateTimeToDivide();
+            agentInfos.stream().filter(a -> a.getFitness() > 0).forEach(i -> i.calculateTime(timeToDivide));
+        } else {
+            agentInfos.forEach(i -> i.setTime(periodTime / count));
         }
     }
 
+    private int calculateTimeToDivide() {
+        int time = periodTime;
+        for (AgentInfo agentInfo : agentInfos) {
+            if (agentInfo.getFitness() == 0) {
+                time -= agentInfo.timeIfNeeded();
+            }
+        }
+        return time;
+    }
+
     public class AgentInfo {
+        private static final int MAX_SLEPT_ITERATIONS = 5;
+
         private final Agent agent;
         private double fitness;
         private int time;
+        private int sleptIterations = 0;
 
         public AgentInfo(Agent agent, int time) {
             this.agent = agent;
@@ -69,12 +84,32 @@ public class FitnessTimeDivider {
             return fitness;
         }
 
+        public int timeIfNeeded() {
+            if (++sleptIterations > AgentInfo.MAX_SLEPT_ITERATIONS) {
+                setTime(time = periodTime / count);
+            } else {
+                time = 0;
+            }
+            return time;
+        }
+
+        public void calculateTime(int timeToDivide) {
+            setTime((int) (timeToDivide * fitness / fitnessSum));
+        }
+
+        public void setTime(int time) {
+            if (time > 0) {
+                sleptIterations = 0;
+            }
+            this.time = time;
+        }
+
         public int getTime() {
             return time;
         }
 
-        public void setTime(int time) {
-            this.time = time;
+        public AgentInfo copy() {
+            return new AgentInfo(agent, time);
         }
     }
 
