@@ -1,6 +1,6 @@
 package pl.edu.agh.capo.scheduler;
 
-
+import pl.edu.agh.capo.hough.Transform;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.common.Measure;
 
@@ -18,6 +18,10 @@ public class Scheduler {
     }
 
     public void update(Measure measure) {
+
+        //new HoughTransform().run(measure.getVisions());
+        //System.exit(1);
+
         if (divider != null) {
             divider.updateFitnesses();
             new Thread(new Worker(divider.getTimes(), measure)).start();
@@ -57,8 +61,12 @@ public class Scheduler {
             this.startTime = System.currentTimeMillis();
             this.agent = info.getAgent();
             this.time = info.getTime();
+
+            Transform t = new Transform();
+            t.run(measure.getVisions());
+
             if (updateMeasures && measure != null) {
-                agent.setMeasure(measure);
+                agent.setMeasure(measure, t.getLines(6));
                 agent.estimateFitness();
             }
 

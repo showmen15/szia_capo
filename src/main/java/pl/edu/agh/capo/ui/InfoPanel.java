@@ -49,7 +49,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     public void updateAgents(MazeMap map) {
         agents = new ArrayList<>();
         FitnessTimeDivider fitnessTimeDivider = new FitnessTimeDivider(periodTime, map.getSpaces().size());
-        for (Room room : MazeHelper.buildRooms(map)){
+        for (Room room : MazeHelper.buildRooms(map)) {
             Agent agent = new Agent(room);
             agents.add(agent);
             fitnessTimeDivider.addAgent(agent);

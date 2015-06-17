@@ -1,5 +1,6 @@
 package pl.edu.agh.capo.logic;
 
+import pl.edu.agh.capo.hough.Line;
 import pl.edu.agh.capo.logic.common.Measure;
 import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.maze.Coordinates;
@@ -13,6 +14,7 @@ public class Agent {
     private double alpha;
 
     private List<Vision> visions = new ArrayList<>();
+    private List<Double> angles = new ArrayList<>();
 
     private double fitness;
     private Room room;
@@ -26,8 +28,15 @@ public class Agent {
         y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
     }
 
-    public void setMeasure(Measure measure) {
+    public void setMeasure(Measure measure, List<Line> lines) {
         this.visions = measure.getVisions();
+        angles.clear();
+        for (Line line : lines){
+            angles.add(normalizeAlpha(line.getTheta()));
+            angles.add(normalizeAlpha(line.getTheta() + 90.0));
+            angles.add(normalizeAlpha(line.getTheta() + 180.0));
+            angles.add(normalizeAlpha(line.getTheta() + 270.0));
+        }
     }
 
     public double getX() {
@@ -51,13 +60,17 @@ public class Agent {
     }
 
     public void setAlpha(double alpha) {
+        this.alpha = normalizeAlpha(alpha);
+    }
+
+    private double normalizeAlpha(double alpha){
         while (alpha < -180.0) {
             alpha += 360.0;
         }
         while (alpha > 180.0) {
             alpha -= 360.0;
         }
-        this.alpha = alpha;
+        return alpha;
     }
 
     public List<Vision> getVisions() {
@@ -132,17 +145,27 @@ public class Agent {
         return sum/count;
     }
 
-    public double estimateRandom() {
+    public void estimateRandom() {
         Coordinates coords = room.getRandomPosition();
-        double angle = random.nextDouble() * 360 - 180;
-        double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
+        if (angles.size() == 0) {
+            double angle = random.nextDouble() * 360 - 180;
+            double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
+            tryAndChangePositionOnNeed(estimated, coords, angle);
+        } else {
+            for (Double angle : angles){
+                double estimated = estimateFitness(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle));
+                tryAndChangePositionOnNeed(estimated, coords, angle);
+            }
+        }
+    }
+
+    private void tryAndChangePositionOnNeed(double estimated, Coordinates coords, double angle){
         if (estimated > fitness) {
             fitness = estimated;
             x = coords.getX();
             y = coords.getY();
             alpha = angle;
         }
-        return fitness;
     }
 
     public double estimateFitness() {
