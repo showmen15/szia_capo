@@ -57,6 +57,8 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         mazePanel.setMaze(map);
         scheduler.setDivider(fitnessTimeDivider);
         scheduler.setListener(this::onMeasure);
+        scheduler.setUpdateMeasures(measureCheckbox.isSelected());
+
         showAgent(0);
 
         setButtonsEnable(true);

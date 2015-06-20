@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Transform {
     private final static int THETA_COUNT = 180;
-    public final static int SIZE = 300;
+    public final static int SIZE = 100;
     private final static int NORMALIZATION_CONST = 6;
 
     private final static double THETA_STEP = Math.PI / THETA_COUNT;
@@ -33,14 +33,14 @@ public class Transform {
         houghValues = new int[THETA_COUNT][DOUBLE_HOUGH_SIZE];
     }
 
-    public void run(List<Vision> visions){
+    public void run(List<Vision> visions) {
         visions.forEach(this::addPoint);
     }
 
     public void addPoint(Vision vision) {
-        double x = HALF_SIZE - (((Math.cos(Math.toRadians(vision.getAngle())) * vision.getDistance())* HALF_SIZE) / NORMALIZATION_CONST);
+        double x = HALF_SIZE - (((Math.cos(Math.toRadians(vision.getAngle())) * vision.getDistance()) * HALF_SIZE) / NORMALIZATION_CONST);
         double y = ((Math.sin(Math.toRadians(vision.getAngle())) * vision.getDistance() * HALF_SIZE) / NORMALIZATION_CONST) + HALF_SIZE;
-        addPoint((int)x, (int)y);
+        addPoint((int) x, (int) y);
     }
 
     private void addPoint(int x, int y) {
@@ -55,7 +55,7 @@ public class Transform {
         }
     }
 
-    public List<Line> getLines(int threshold) {
+    public List<Line> getLines(int threshold, int max) {
         List<Result> results = new ArrayList<>();
         for (int t = 0; t < THETA_COUNT; t++) {
             for (int r = 0; r < DOUBLE_HOUGH_SIZE; r++) {
@@ -66,7 +66,7 @@ public class Transform {
         List<Line> lines = new ArrayList<>();
         Collections.sort(results, (e1, e2) -> Integer.compare(e2.count, e1.count));
 
-        while (results.get(0).count >= threshold){
+        while (results.get(0).count >= threshold && lines.size() < max) {
             lines.add(results.remove(0).toLine());
         }
         houghValues = new int[THETA_COUNT][DOUBLE_HOUGH_SIZE];

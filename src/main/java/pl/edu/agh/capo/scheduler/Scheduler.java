@@ -11,7 +11,7 @@ public class Scheduler {
     private UpdateMeasureListener listener;
 
     private FitnessTimeDivider divider;
-    private boolean updateMeasures = true;
+    private boolean updateMeasures = false;
 
     public void setDivider(FitnessTimeDivider divider) {
         this.divider = divider;
@@ -62,11 +62,13 @@ public class Scheduler {
             this.agent = info.getAgent();
             this.time = info.getTime();
 
-            Transform t = new Transform();
-            t.run(measure.getVisions());
-
             if (updateMeasures && measure != null) {
-                agent.setMeasure(measure, t.getLines(6));
+
+                Transform t = new Transform();
+                t.run(measure.getVisions());
+                agent.setMeasure(measure, t.getLines(8, 6));
+
+                //agent.setMeasure(measure, new ArrayList<>());
                 agent.estimateFitness();
             }
 
@@ -82,14 +84,14 @@ public class Scheduler {
 
         @Override
         public void run() {
-            System.out.println("starting worker with " + infos.size());
+            //System.out.println("starting worker with " + infos.size());
             long time = System.currentTimeMillis();
             infos.forEach(this::updateMeasure);
             if (listener != null) {
                 new Thread(listener::onUpdate).start();
             }
             long end = System.currentTimeMillis();
-            System.out.println("took: " + (end - time));
+            //System.out.println("took: " + (end - time));
         }
 
         private void checkTime() throws TimeoutException {

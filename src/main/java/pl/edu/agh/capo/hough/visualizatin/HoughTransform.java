@@ -5,10 +5,10 @@ import pl.edu.agh.capo.hough.Line;
 import pl.edu.agh.capo.hough.Transform;
 import pl.edu.agh.capo.logic.common.Vision;
 
-import java.awt.image.BufferedImage;
 import java.awt.*;
-import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
 /**
  * <p/>
@@ -73,7 +73,7 @@ public class HoughTransform {
         h.run(visionList);
 
         // get the lines out
-        java.util.List<Line> lines = h.getLines(5);
+        java.util.List<Line> lines = h.getLines(5, 10);
         System.out.println(lines.size());
 
         // draw the lines back onto the image

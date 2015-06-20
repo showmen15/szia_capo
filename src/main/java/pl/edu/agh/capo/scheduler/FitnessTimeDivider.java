@@ -40,7 +40,7 @@ public class FitnessTimeDivider {
     }
 
     public void recalculate() {
-        System.out.println("Recalculating...");
+        //System.out.println("fitness sum");
         if (fitnessSum > 0.0) {
             final int timeToDivide = calculateTimeToDivide();
             agentInfos.stream().filter(a -> a.getFitness() > 0).forEach(i -> i.calculateTime(timeToDivide));

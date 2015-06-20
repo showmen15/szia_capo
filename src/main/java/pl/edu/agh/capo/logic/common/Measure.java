@@ -1,11 +1,12 @@
 package pl.edu.agh.capo.logic.common;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Measure {
-    private double leftVelocity;
-    private double rightVelocity;
-    private List<Vision> visions;
+    private final double leftVelocity;
+    private final double rightVelocity;
+    private final List<Vision> visions;
 
     public Measure(double leftVelocity, double rightVelocity, List<Vision> visions) {
         this.leftVelocity = leftVelocity;
@@ -22,6 +23,6 @@ public class Measure {
     }
 
     public List<Vision> getVisions() {
-        return visions;
+        return new CopyOnWriteArrayList<>(visions);
     }
 }

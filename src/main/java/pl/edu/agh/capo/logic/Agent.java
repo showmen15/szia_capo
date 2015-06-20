@@ -6,6 +6,7 @@ import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.maze.Coordinates;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Agent {
 
@@ -14,7 +15,7 @@ public class Agent {
     private double alpha;
 
     private List<Vision> visions = new ArrayList<>();
-    private List<Double> angles = new ArrayList<>();
+    private List<Double> angles = new CopyOnWriteArrayList<>();
 
     private double fitness;
     private Room room;
@@ -152,8 +153,9 @@ public class Agent {
             double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
             tryAndChangePositionOnNeed(estimated, coords, angle);
         } else {
+            //TODO: make it more fine-grained
             for (Double angle : angles){
-                double estimated = estimateFitness(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle));
+                double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
                 tryAndChangePositionOnNeed(estimated, coords, angle);
             }
         }
