@@ -2,7 +2,7 @@ package pl.edu.agh.capo.scheduler;
 
 import pl.edu.agh.capo.hough.Transform;
 import pl.edu.agh.capo.logic.Agent;
-import pl.edu.agh.capo.logic.common.Measure;
+import pl.edu.agh.capo.logic.robot.Measure;
 
 import java.util.List;
 
@@ -12,6 +12,13 @@ public class Scheduler {
 
     private FitnessTimeDivider divider;
     private boolean updateMeasures = false;
+    private final double robotMaxLinearVelocity;
+    private Measure lastMeasure;
+    private double measureDiffInSeconds;
+
+    public Scheduler(double robotMaxLinearVelocity) {
+        this.robotMaxLinearVelocity = robotMaxLinearVelocity;
+    }
 
     public void setDivider(FitnessTimeDivider divider) {
         this.divider = divider;
@@ -23,6 +30,14 @@ public class Scheduler {
         //System.exit(1);
 
         if (divider != null) {
+            if (measure != null) {
+                if (lastMeasure != null) {
+                    measureDiffInSeconds = (measure.getDatetime() - lastMeasure.getDatetime()) / 1000.0;
+                }
+
+                lastMeasure = measure;
+            }
+
             divider.updateFitnesses();
             new Thread(new Worker(divider.getTimes(), measure)).start();
             divider.recalculate();
@@ -40,6 +55,10 @@ public class Scheduler {
 
     public void setListener(UpdateMeasureListener listener) {
         this.listener = listener;
+    }
+
+    public double getRobotMaxLinearVelocity() {
+        return this.robotMaxLinearVelocity;
     }
 
     private class Worker implements Runnable {
@@ -66,7 +85,7 @@ public class Scheduler {
 
                 Transform t = new Transform();
                 t.run(measure.getVisions());
-                agent.setMeasure(measure, t.getLines(8, 6));
+                agent.setMeasure(measure, t.getLines(8, 6), measureDiffInSeconds);
 
                 //agent.setMeasure(measure, new ArrayList<>());
                 agent.estimateFitness();

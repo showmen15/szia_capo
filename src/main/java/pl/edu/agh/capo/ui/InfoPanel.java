@@ -50,7 +50,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         agents = new ArrayList<>();
         FitnessTimeDivider fitnessTimeDivider = new FitnessTimeDivider(periodTime, map.getSpaces().size());
         for (Room room : MazeHelper.buildRooms(map)) {
-            Agent agent = new Agent(room);
+            Agent agent = new Agent(room, scheduler.getRobotMaxLinearVelocity());
             agents.add(agent);
             fitnessTimeDivider.addAgent(agent);
         }

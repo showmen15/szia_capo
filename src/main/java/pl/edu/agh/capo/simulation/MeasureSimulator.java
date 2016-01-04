@@ -1,6 +1,6 @@
 package pl.edu.agh.capo.simulation;
 
-import pl.edu.agh.capo.logic.common.Measure;
+import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.scheduler.Scheduler;
 
 import java.util.Iterator;

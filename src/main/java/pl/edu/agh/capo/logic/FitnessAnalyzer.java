@@ -1,5 +1,6 @@
 package pl.edu.agh.capo.logic;
 
+import pl.edu.agh.capo.logic.common.Location;
 import pl.edu.agh.capo.maze.Gate;
 
 import java.util.List;
@@ -26,6 +27,10 @@ public class FitnessAnalyzer {
         this.angle = angle;
 
         findLimitAngle();
+    }
+
+    public FitnessAnalyzer(Room room, Location location) {
+        this(room, location.positionX, location.positionY, location.direction);
     }
 
     private void findLimitAngle() {
@@ -158,8 +163,8 @@ public class FitnessAnalyzer {
     }
 
     private double countMeasureEstimation(double distance, double distanceToWall, boolean overMaxRange) {
-        if (overMaxRange){
-            return  (distanceToWall >= distance) ? 0.0 : 1.0;
+        if (overMaxRange) {
+            return (distanceToWall >= distance) ? 0.0 : 1.0;
         }
 
         double diff = Math.abs(distanceToWall - distance);

@@ -1,8 +1,9 @@
 package pl.edu.agh.capo.logic;
 
 import pl.edu.agh.capo.hough.Line;
-import pl.edu.agh.capo.logic.common.Measure;
 import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.logic.robot.CapoRobotMotionModel;
+import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.maze.Coordinates;
 
 import java.util.*;
@@ -10,8 +11,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Agent {
 
-    private double x;
-    private double y;
     private double alpha;
 
     private List<Vision> visions = new ArrayList<>();
@@ -21,39 +20,47 @@ public class Agent {
     private Room room;
 
     private final Random random = new Random();
+    private final CapoRobotMotionModel motionModel;
 
-    public Agent(Room room) {
-        this.alpha = 0;
+    public Agent(Room room, double robotMaxLinearVelocity) {
+        this.motionModel = new CapoRobotMotionModel(robotMaxLinearVelocity);
         this.room = room;
-        x = room.getMinX() + ((room.getMaxX() - room.getMinX()) / 2);
-        y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
+        double x = room.getMinX() + ((room.getMaxX() - room.getMinX()) / 2);
+        double y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
+        motionModel.setLocation(x, y, 0);
     }
 
-    public void setMeasure(Measure measure, List<Line> lines) {
+    public void setMeasure(Measure measure, List<Line> lines, double measureDiffInSeconds) {
         this.visions = measure.getVisions();
         angles.clear();
-        for (Line line : lines){
+        for (Line line : lines) {
+            //TODO: make it more fine-grained
             angles.add(normalizeAlpha(line.getTheta()));
             angles.add(normalizeAlpha(line.getTheta() + 90.0));
             angles.add(normalizeAlpha(line.getTheta() + 180.0));
             angles.add(normalizeAlpha(line.getTheta() + 270.0));
         }
+
+        if (measureDiffInSeconds > 0) {
+            motionModel.setVelocity(measure.getLeftVelocity(), measure.getRightVelocity());
+            motionModel.moveRobot(measureDiffInSeconds);
+        }
     }
 
     public double getX() {
-        return x;
+        return motionModel.getLocation().positionX;
     }
 
     public void setX(double x) {
-        this.x = x;
+        motionModel.getLocation().positionX = x;
     }
 
     public double getY() {
-        return y;
+        return motionModel.getLocation().positionY;
     }
 
     public void setY(double y) {
-        this.y = y;
+        motionModel.getLocation().positionY = y;
     }
 
     public double getAlpha() {
@@ -64,7 +71,7 @@ public class Agent {
         this.alpha = normalizeAlpha(alpha);
     }
 
-    private double normalizeAlpha(double alpha){
+    private double normalizeAlpha(double alpha) {
         while (alpha < -180.0) {
             alpha += 360.0;
         }
@@ -106,7 +113,7 @@ public class Agent {
      * @param matches nr of visions that need to check out to continue computation
      */
     private double estimateFitnessByTries(FitnessAnalyzer analyzer, int tries, int matches) {
-        if (tries > visions.size()){
+        if (tries > visions.size()) {
             return estimateFitness(analyzer);
         }
 
@@ -114,22 +121,22 @@ public class Agent {
         int currMatches = 0;
 
         int step = visions.size() / tries;
-        for (int i = 0; i < visions.size(); i += step){
+        for (int i = 0; i < visions.size(); i += step) {
             Vision vision = visions.get(i);
             double result = analyzer.estimate(vision.getAngle(), vision.getDistance());
-            if (result > 0){
-                currMatches ++;
+            if (result > 0) {
+                currMatches++;
             }
             vision.setFitness(result);
             visionTriesIndexes.add(i);
         }
 
-        if (matches > currMatches){
+        if (matches > currMatches) {
             return -1.0;
         }
 
-        for (int i = 0; i < visions.size(); i++){
-            if (visionTriesIndexes.contains(i)){
+        for (int i = 0; i < visions.size(); i++) {
+            if (visionTriesIndexes.contains(i)) {
                 continue;
             }
 
@@ -150,35 +157,44 @@ public class Agent {
                 count++;
             }
         }
-        return sum/count;
+        return sum / count;
     }
 
     public void estimateRandom() {
         Coordinates coords = room.getRandomPosition();
         if (angles.size() == 0) {
             double angle = random.nextDouble() * 360 - 180;
-            double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
-            tryAndChangePositionOnNeed(estimated, coords, angle);
+            tryAndChangePositionIfBetterEstimation(coords, angle);
         } else {
-            //TODO: make it more fine-grained
-            for (Double angle : angles){
-                double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
-                tryAndChangePositionOnNeed(estimated, coords, angle);
-            }
+            updateAlphaWithVisionAngles(coords);
         }
     }
 
-    private void tryAndChangePositionOnNeed(double estimated, Coordinates coords, double angle){
+    private void tryAndChangePositionIfBetterEstimation(Coordinates coords, Double angle) {
+        double estimated = estimateFitnessByTries(new FitnessAnalyzer(room, coords.getX(), coords.getY(), angle), 3, 2);
+        changePositionIfBetterEstimation(estimated, coords, angle);
+    }
+
+    /**
+     * Match coordinates with vision angles
+     */
+    private void updateAlphaWithVisionAngles(Coordinates coords) {
+        for (Double angle : angles) {
+            tryAndChangePositionIfBetterEstimation(coords, angle);
+        }
+    }
+
+    private void changePositionIfBetterEstimation(double estimated, Coordinates coords, double angle) {
         if (estimated > fitness) {
             fitness = estimated;
-            x = coords.getX();
-            y = coords.getY();
+            setX(coords.getX());
+            setY(coords.getY());
             alpha = angle;
         }
     }
 
     public double estimateFitness() {
-        fitness = estimateFitness(new FitnessAnalyzer(room, x, y, alpha));
+        fitness = estimateFitness(new FitnessAnalyzer(room, motionModel.getLocation()));
         return fitness;
     }
 
