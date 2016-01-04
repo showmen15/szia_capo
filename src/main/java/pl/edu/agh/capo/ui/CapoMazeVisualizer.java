@@ -53,7 +53,7 @@ public class CapoMazeVisualizer extends JFrame {
 
         JMenuItem menuItem = new JMenuItem("Wczytaj plik...", KeyEvent.VK_T);
         menuItem.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
+            JFileChooser fileChooser = new JFileChooser("./");
             fileChooser.setFileFilter(new FileNameExtensionFilter("RoboMaze map (*.roson)", "roson"));
             if (fileChooser.showOpenDialog(CapoMazeVisualizer.this) == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();

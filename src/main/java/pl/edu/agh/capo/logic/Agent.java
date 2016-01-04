@@ -98,6 +98,13 @@ public class Agent {
         return countFitness();
     }
 
+    /**
+     * To save computation time we first try few visions to check whether calculating fitness of all visions
+     * is sensible
+     *
+     * @param tries   nr of visions to check first
+     * @param matches nr of visions that need to check out to continue computation
+     */
     private double estimateFitnessByTries(FitnessAnalyzer analyzer, int tries, int matches) {
         if (tries > visions.size()){
             return estimateFitness(analyzer);
