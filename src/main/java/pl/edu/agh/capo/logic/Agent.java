@@ -195,6 +195,7 @@ public class Agent {
 
     public double estimateFitness() {
         fitness = estimateFitness(new FitnessAnalyzer(room, motionModel.getLocation()));
+        updateAlphaWithVisionAngles(motionModel.getLocation().getCoordinates());
         return fitness;
     }
 
