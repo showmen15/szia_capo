@@ -1,6 +1,6 @@
 package pl.edu.agh.capo.logic;
 
-import pl.edu.agh.capo.hough.Line;
+import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.logic.robot.CapoRobotMotionModel;
 import pl.edu.agh.capo.logic.robot.Measure;

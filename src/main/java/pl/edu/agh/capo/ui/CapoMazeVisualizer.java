@@ -16,7 +16,7 @@ import java.io.FileReader;
 
 public class CapoMazeVisualizer extends JFrame {
 
-    private static final Dimension FRAME_SIZE = new Dimension(800, 660);
+    private static final Dimension FRAME_SIZE = new Dimension(900, 660);
     private static final int SPLIT_DIVIDER_LOCATION = 600;
 
     private final Logger logger = Logger.getLogger(CapoMazeVisualizer.class);

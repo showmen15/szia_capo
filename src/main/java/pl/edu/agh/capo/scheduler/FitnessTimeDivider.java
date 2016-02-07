@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 public class FitnessTimeDivider {
     private final List<AgentInfo> agentInfos;
     private double fitnessSum = 0.0;
+    protected double fitnessSumMedium = 0.0;
+    protected int fitnessSumMediumCount = 0;
     private final int periodTime;
     private final int count;
 
@@ -47,6 +49,9 @@ public class FitnessTimeDivider {
         } else {
             agentInfos.forEach(i -> i.setTime(periodTime / count));
         }
+
+        fitnessSumMedium += fitnessSum;
+        fitnessSumMediumCount++;
     }
 
     private int calculateTimeToDivide() {

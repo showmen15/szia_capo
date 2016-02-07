@@ -69,6 +69,7 @@ public class MeasureFileReader implements Iterator<Measure> {
     public Measure next() {
         if (!measures.hasNext()) {
             measures = list.iterator();
+            return null;
         }
         return measures.next();
     }

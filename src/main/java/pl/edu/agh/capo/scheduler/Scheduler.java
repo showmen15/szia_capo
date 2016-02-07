@@ -1,6 +1,7 @@
 package pl.edu.agh.capo.scheduler;
 
-import pl.edu.agh.capo.hough.Transform;
+import pl.edu.agh.capo.hough.HoughTransform;
+import pl.edu.agh.capo.hough.test.NoHoughTransform;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.robot.Measure;
 
@@ -27,10 +28,17 @@ public class Scheduler {
     public void update(Measure measure) {
 
         //new HoughTransform().run(measure.getVisions());
-        //System.exit(1);
+        if (updateMeasures && measure == null) {
+            System.out.println(Double.toString(divider.fitnessSumMedium / divider.fitnessSumMediumCount).replace('.', ','));
+            divider.fitnessSumMedium = 0.0;
+            divider.fitnessSumMediumCount = 0;
+            lastMeasure = null;
+            return;
+            //System.exit(1);
+        }
 
         if (divider != null) {
-            if (measure != null) {
+            if (updateMeasures) {
                 if (lastMeasure != null) {
                     measureDiffInSeconds = (measure.getDatetime() - lastMeasure.getDatetime()) / 1000.0;
                 }
@@ -70,6 +78,7 @@ public class Scheduler {
         private long startTime;
 
         private final Measure measure;
+        private final HoughTransform houghTransform = new NoHoughTransform();
 
         private Worker(List<FitnessTimeDivider.AgentInfo> infos, Measure measure) {
             this.infos = infos;
@@ -82,11 +91,7 @@ public class Scheduler {
             this.time = info.getTime();
 
             if (updateMeasures && measure != null) {
-
-                Transform t = new Transform();
-                t.run(measure.getVisions());
-                agent.setMeasure(measure, t.getLines(8, 6), measureDiffInSeconds);
-
+                agent.setMeasure(measure, houghTransform.getLines(8, 4), measureDiffInSeconds);
                 //agent.setMeasure(measure, new ArrayList<>());
                 agent.estimateFitness();
             }
@@ -105,6 +110,8 @@ public class Scheduler {
         public void run() {
             //System.out.println("starting worker with " + infos.size());
             long time = System.currentTimeMillis();
+            houghTransform.run(measure.getVisions());
+
             infos.forEach(this::updateMeasure);
             if (listener != null) {
                 new Thread(listener::onUpdate).start();
