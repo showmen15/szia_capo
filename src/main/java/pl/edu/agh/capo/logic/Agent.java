@@ -1,74 +1,139 @@
 package pl.edu.agh.capo.logic;
 
 import pl.edu.agh.capo.hough.common.Line;
+import pl.edu.agh.capo.logic.common.Location;
 import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.logic.robot.CapoRobotMotionModel;
 import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.maze.Coordinates;
+import pl.edu.agh.capo.maze.Gate;
+import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 
 public class Agent {
 
-    private double alpha;
-
-    private List<Vision> visions = new ArrayList<>();
-    private List<Double> angles = new CopyOnWriteArrayList<>();
-
-    private double fitness;
-    private Room room;
-
     private final Random random = new Random();
     private final CapoRobotMotionModel motionModel;
+    private final TimeDivider timeDivider;
+    private List<Vision> visions = new ArrayList<>();
+    private List<Double> angles = new CopyOnWriteArrayList<>();
+    private double fitness;
+    private double energy;
+    private long energyCount;
+    private Room room;
+    private boolean isTheBest;
 
-    public Agent(Room room, double robotMaxLinearVelocity) {
-        this.motionModel = new CapoRobotMotionModel(robotMaxLinearVelocity);
+    public Agent(Room room, TimeDivider timeDivider) {
+        this.timeDivider = timeDivider;
         this.room = room;
-        double x = room.getMinX() + ((room.getMaxX() - room.getMinX()) / 2);
-        double y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
-        motionModel.setLocation(x, y, 0);
+        this.motionModel = createCapoRobotMotionModel();
     }
 
-    public void setMeasure(Measure measure, List<Line> lines, double measureDiffInSeconds) {
+    private CapoRobotMotionModel createCapoRobotMotionModel() {
+        double x = room.getMinX() + ((room.getMaxX() - room.getMinX()) / 2);
+        double y = room.getMinY() + ((room.getMaxY() - room.getMinY()) / 2);
+        return new CapoRobotMotionModel(x, y, 0);
+    }
+
+    public void setIsTheBest(boolean isTheBest) {
+        this.isTheBest = isTheBest;
+    }
+
+    public void setMeasure(Measure measure, List<Line> lines, double deltaTimeInMillis) {
         this.visions = measure.getVisions();
         angles.clear();
         for (Line line : lines) {
-            //TODO: make it more fine-grained
             angles.add(normalizeAlpha(line.getTheta()));
             angles.add(normalizeAlpha(line.getTheta() + 90.0));
             angles.add(normalizeAlpha(line.getTheta() + 180.0));
             angles.add(normalizeAlpha(line.getTheta() + 270.0));
         }
 
-        if (measureDiffInSeconds > 0) {
-            motionModel.setVelocity(measure.getLeftVelocity(), measure.getRightVelocity());
-            motionModel.moveRobot(measureDiffInSeconds);
+        if (deltaTimeInMillis > 0) {
+            //applyMotion(measure, deltaTimeInMillis);
         }
     }
 
-    public double getX() {
-        return motionModel.getLocation().positionX;
+    private synchronized void applyMotion(Measure measure, double measureDiffInSeconds) {
+        Location location = motionModel.getLocationAfterTime(measure, measureDiffInSeconds);
+        location.alpha = normalizeAlpha(location.alpha);
+        updateLocationAndRoomIfNeeded(measure, location);
     }
 
-    public void setX(double x) {
-        motionModel.getLocation().positionX = x;
+    private void updateLocationAndRoomIfNeeded(Measure measure, Location location) {
+        Gate gate;
+        if (location.positionX <= room.getMinX()) {
+            gate = checkWestGates(location);
+        } else if (location.positionX >= room.getMaxX()) {
+            gate = checkEastGates(location);
+        } else if (location.positionY <= room.getMinY()) {
+            gate = checkNorthGates(location);
+        } else if (location.positionY >= room.getMaxY()) {
+            gate = checkSouthGates(location);
+        } else {
+            motionModel.applyLocation(location, measure);
+            return;
+        }
+        if (gate != null) {
+            motionModel.applyLocation(location, measure);
+            timeDivider.addAgentInNextInterval(new Agent(this.room, timeDivider));
+            this.room = room.getRoomBehindGate(gate);
+        }
+
     }
 
-    public double getY() {
-        return motionModel.getLocation().positionY;
+    private Gate checkSouthGates(Location location) {
+        return checkGates(room.getSouthGates(), location.positionX, this::horizontalGateStart, this::horizontalGateEnd);
     }
 
-    public void setY(double y) {
-        motionModel.getLocation().positionY = y;
+    private Gate checkEastGates(Location location) {
+        return checkGates(room.getEastGates(), location.positionY, this::verticalGateStart, this::verticalGateEnd);
     }
 
-    public double getAlpha() {
-        return alpha;
+    private Gate checkNorthGates(Location location) {
+        return checkGates(room.getNorthGates(), location.positionX, this::horizontalGateStart, this::horizontalGateEnd);
     }
 
-    public void setAlpha(double alpha) {
-        this.alpha = normalizeAlpha(alpha);
+    private Gate checkWestGates(Location location) {
+        return checkGates(room.getWestGates(), location.positionY, this::verticalGateStart, this::verticalGateEnd);
+    }
+
+    private double horizontalGateStart(Gate gate) {
+        return Math.min(gate.getFrom().getX(), gate.getTo().getX());
+    }
+
+    private double horizontalGateEnd(Gate gate) {
+        return Math.max(gate.getFrom().getX(), gate.getTo().getX());
+    }
+
+    private double verticalGateStart(Gate gate) {
+        return Math.min(gate.getFrom().getY(), gate.getTo().getY());
+    }
+
+    private double verticalGateEnd(Gate gate) {
+        return Math.max(gate.getFrom().getY(), gate.getTo().getY());
+    }
+
+    private Gate checkGates(List<Gate> gatesToCheck, double coordinate, Function<Gate, Double> getStart, Function<Gate, Double> getEnd) {
+        for (Gate gate : gatesToCheck) {
+            double start = getStart.apply(gate);
+            double end = getEnd.apply(gate);
+            if (numberInRange(coordinate, start, end)) {
+                return gate;
+            }
+        }
+        return null;
+    }
+
+    private boolean numberInRange(double number, double start, double end) {
+        return number > start && number < end;
+    }
+
+    public Location getLocation() {
+        return motionModel.getLocation();
     }
 
     private double normalizeAlpha(double alpha) {
@@ -186,17 +251,35 @@ public class Agent {
 
     private void changePositionIfBetterEstimation(double estimated, Coordinates coords, double angle) {
         if (estimated > fitness) {
-            fitness = estimated;
-            setX(coords.getX());
-            setY(coords.getY());
-            alpha = angle;
+            updateFitnessAndRecalculateEnergy(estimated);
+            Location location = new Location(coords, angle);
+            motionModel.applyLocation(location);
         }
     }
 
+    private synchronized void recalculateEnergy() {
+        energyCount++;
+        energy += (fitness / energyCount - energy / energyCount);
+        //System.out.println(energy);
+    }
+
     public double estimateFitness() {
-        fitness = estimateFitness(new FitnessAnalyzer(room, motionModel.getLocation()));
-        updateAlphaWithVisionAngles(motionModel.getLocation().getCoordinates());
+        double fitness = estimateFitness(new FitnessAnalyzer(room, getLocation()));
+        updateFitnessAndRecalculateEnergy(fitness);
+        updateAlphaWithVisionAngles(getLocation().getCoordinates());
         return fitness;
     }
 
+    private void updateFitnessAndRecalculateEnergy(double fitness) {
+        this.fitness = fitness;
+        recalculateEnergy();
+    }
+
+    public double getEnergy() {
+        return energy;
+    }
+
+    public void setLocation(Location location) {
+        motionModel.applyLocation(location);
+    }
 }

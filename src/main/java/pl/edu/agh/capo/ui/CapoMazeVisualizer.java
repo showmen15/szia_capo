@@ -34,13 +34,13 @@ public class CapoMazeVisualizer extends JFrame {
         return instance;
     }
 
-    public void open(Scheduler scheduler, int periodTime) {
+    public void open(Scheduler scheduler) {
         setJMenuBar(createMenuBar());
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         mazePanel = new MazePanel();
-        infoPanel = new InfoPanel(mazePanel, scheduler, periodTime);
+        infoPanel = new InfoPanel(mazePanel, scheduler);
         setContentPane(createSplitPanel());
         setSize(FRAME_SIZE);
         setVisible(true);

@@ -7,13 +7,10 @@ import pl.edu.agh.capo.ui.CapoMazeVisualizer;
 
 public class Main {
 
-    public static final int PERIOD_TIME = 200;      //200 ms
-    public static final double robotMaxLinearVelocity = 0.7; // estimated on given data(DaneLabirynt(1|2|3).csv)
-
     public static void main(String[] args) {
-        Scheduler scheduler = new Scheduler(robotMaxLinearVelocity);
-        MeasureSimulator simulator = new MeasureSimulator(new MeasureFileReader("DaneLabirynt3.csv"), scheduler, PERIOD_TIME);
+        Scheduler scheduler = new Scheduler();
+        MeasureSimulator simulator = new MeasureSimulator(new MeasureFileReader("DaneLabirynt3.csv"), scheduler);
         simulator.start();
-        CapoMazeVisualizer.getInstance().open(scheduler, PERIOD_TIME);
+        CapoMazeVisualizer.getInstance().open(scheduler);
     }
 }

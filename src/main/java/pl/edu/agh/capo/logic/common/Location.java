@@ -7,13 +7,19 @@ import java.io.Serializable;
 
 public class Location implements Serializable {
     private static final long serialVersionUID = 1067476091479732881L;
-    public double positionX, positionY, direction;
+    public double positionX, positionY, alpha;
 
-    public Location(double positionX, double positionY, double direction) {
+    public Location(double positionX, double positionY, double alpha) {
         super();
         this.positionX = positionX;
         this.positionY = positionY;
-        this.direction = direction;
+        this.alpha = alpha;
+    }
+
+    public Location(Coordinates coords, double angle) {
+        this.positionX = coords.getX();
+        this.positionY = coords.getY();
+        this.alpha = angle;
     }
 
     public Vector2D getPositionVector() {

@@ -1,105 +1,109 @@
 package pl.edu.agh.capo.scheduler;
 
 import pl.edu.agh.capo.hough.HoughTransform;
-import pl.edu.agh.capo.hough.test.NoHoughTransform;
+import pl.edu.agh.capo.hough.basic.BasicHoughTransform;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.robot.Measure;
-
-import java.util.List;
+import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
 public class Scheduler {
-
     private UpdateMeasureListener listener;
-
-    private FitnessTimeDivider divider;
+    private TimeDivider divider;
     private boolean updateMeasures = false;
-    private final double robotMaxLinearVelocity;
-    private Measure lastMeasure;
-    private double measureDiffInSeconds;
 
-    public Scheduler(double robotMaxLinearVelocity) {
-        this.robotMaxLinearVelocity = robotMaxLinearVelocity;
-    }
+    private Measure currentMeasure;
+    private double millisSinceLastMeasure;
 
-    public void setDivider(FitnessTimeDivider divider) {
+    public void setDivider(TimeDivider divider) {
         this.divider = divider;
     }
 
-    public void update(Measure measure) {
+    private void printAndResetStatistics() {
+        divider.printAndResetStatistics();
+    }
 
-        //new HoughTransform().run(measure.getVisions());
-        if (updateMeasures && measure == null) {
-            System.out.println(Double.toString(divider.fitnessSumMedium / divider.fitnessSumMediumCount).replace('.', ','));
-            divider.fitnessSumMedium = 0.0;
-            divider.fitnessSumMediumCount = 0;
-            lastMeasure = null;
-            return;
-            //System.exit(1);
-        }
+    private boolean measuresFinished(Measure measure) {
+        return updateMeasures && measure == null;
+    }
 
-        if (divider != null) {
-            if (updateMeasures) {
-                if (lastMeasure != null) {
-                    measureDiffInSeconds = (measure.getDatetime() - lastMeasure.getDatetime()) / 1000.0;
-                }
-
-                lastMeasure = measure;
+    private void calculateMeasuresTimeDifference(Measure measure) {
+        if (updateMeasures) {
+            if (this.currentMeasure != null && measure != null) {
+                millisSinceLastMeasure = measure.getDatetime() - this.currentMeasure.getDatetime();
             }
-
-            divider.updateFitnesses();
-            new Thread(new Worker(divider.getTimes(), measure)).start();
-            divider.recalculate();
+            this.currentMeasure = measure;
         }
     }
 
-    public void setUpdateMeasures(boolean updateMeasures) {
-        this.updateMeasures = updateMeasures;
+    private void startWorker() {
+        new Thread(new Worker(currentMeasure)).start();
+    }
+
+    public void update(Measure measure) {
+        if (measuresFinished(measure)) {
+            printAndResetStatistics();
+        } else if (divider != null) {
+            calculateMeasuresTimeDifference(measure);
+            divider.updateFactors();
+            startWorker();
+            divider.recalculate();
+        }
     }
 
     public boolean isUpdateMeasures() {
         return updateMeasures;
     }
 
+    public void setUpdateMeasures(boolean updateMeasures) {
+        this.updateMeasures = updateMeasures;
+    }
 
     public void setListener(UpdateMeasureListener listener) {
         this.listener = listener;
     }
 
-    public double getRobotMaxLinearVelocity() {
-        return this.robotMaxLinearVelocity;
+    public interface UpdateMeasureListener {
+        void onUpdate();
     }
 
     private class Worker implements Runnable {
 
-        private final List<FitnessTimeDivider.AgentInfo> infos;
-
-        private Agent agent;
-        private int time;
-        private long startTime;
-
+        private final int[] times;
         private final Measure measure;
-        private final HoughTransform houghTransform = new NoHoughTransform();
+        private final HoughTransform houghTransform = new BasicHoughTransform();
 
-        private Worker(List<FitnessTimeDivider.AgentInfo> infos, Measure measure) {
-            this.infos = infos;
+        private Agent currentAgent;
+        private int currentTime;
+        private long currentStartTime;
+
+        private Worker(Measure measure) {
             this.measure = measure;
+            this.times = divider.getTimes();
         }
 
-        private void updateMeasure(FitnessTimeDivider.AgentInfo info) {
-            this.startTime = System.currentTimeMillis();
-            this.agent = info.getAgent();
-            this.time = info.getTime();
-
-            if (updateMeasures && measure != null) {
-                agent.setMeasure(measure, houghTransform.getLines(8, 4), measureDiffInSeconds);
-                //agent.setMeasure(measure, new ArrayList<>());
-                agent.estimateFitness();
+        private void updateMeasure(TimeDivider.AgentFactorInfo info) {
+            this.currentStartTime = System.currentTimeMillis();
+            this.currentAgent = info.getAgent();
+            this.currentTime = times[info.getIndex()];
+            if (currentTime > 0) {
+                updateAgentWithMeasure(measure);
+                estimateRandomUntilTimeLeft();
             }
+        }
 
+        private void updateAgentWithMeasure(Measure measure) {
+            if (updateMeasures && measure != null) {
+                currentAgent.setMeasure(measure, houghTransform.getLines(8, 4), millisSinceLastMeasure);
+                //agent.setMeasure(measure, new ArrayList<>());
+                currentAgent.estimateFitness();
+            }
+        }
+
+        private void estimateRandomUntilTimeLeft() {
             try {
                 checkTime();
                 while (true) {
-                    agent.estimateRandom();
+                    currentAgent.estimateRandom();
                     checkTime();
                 }
             } catch (TimeoutException e) {
@@ -108,30 +112,25 @@ public class Scheduler {
 
         @Override
         public void run() {
-            //System.out.println("starting worker with " + infos.size());
-            long time = System.currentTimeMillis();
+            //long time = System.currentTimeMillis();
             houghTransform.run(measure.getVisions());
 
-            infos.forEach(this::updateMeasure);
+            divider.getAgentFactorInfos().forEach(this::updateMeasure);
             if (listener != null) {
                 new Thread(listener::onUpdate).start();
             }
-            long end = System.currentTimeMillis();
+            //long end = System.currentTimeMillis();
             //System.out.println("took: " + (end - time));
         }
 
         private void checkTime() throws TimeoutException {
-            long diff = System.currentTimeMillis() - startTime;
-            if (diff >= time) {
+            long diff = System.currentTimeMillis() - currentStartTime;
+            if (diff >= currentTime) {
                 throw new TimeoutException();
             }
         }
 
         private class TimeoutException extends Exception {
         }
-    }
-
-    public interface UpdateMeasureListener {
-        void onUpdate();
     }
 }

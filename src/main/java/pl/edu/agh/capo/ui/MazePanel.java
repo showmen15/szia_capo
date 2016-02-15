@@ -1,6 +1,8 @@
 package pl.edu.agh.capo.ui;
 
 import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.Room;
+import pl.edu.agh.capo.logic.common.Location;
 import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.MazeMap;
@@ -27,8 +29,14 @@ public class MazePanel extends JPanel {
 
     private Agent agent;
 
+    private java.util.List<Agent> agentList;
+
     public void setAgent(Agent agent) {
         this.agent = agent;
+    }
+
+    public void setAgents(java.util.List<Agent> agentList) {
+        this.agentList = agentList;
     }
 
     public void setMaze(MazeMap map) {
@@ -46,8 +54,18 @@ public class MazePanel extends JPanel {
         printGates(g2, map.getGates(), Color.cyan);
         printWalls(g2, map.getWalls(), Color.gray);
         printAgent(agent, g2);
+/*        if(agentList != null) {
+            agentList.stream().filter(a-> !a.equals(agent)).forEach(a-> printAgent(a, g2));
+        }*/
         printGates(g2, agent.getRoom().getGates(), Color.blue);
         printWalls(g2, agent.getRoom().getWalls(), Color.black);
+        printEtiquettes(g2, agent.getRoom());
+    }
+
+    private void printEtiquettes(Graphics2D g2, Room room) {
+        float x = (float) normalizeCoordinate((room.getMaxX() - room.getMinX()) / 2 + room.getMinX(), minX, ratio);
+        float y = (float) normalizeCoordinate((room.getMaxY() - room.getMinY()) / 2 + room.getMinY(), minY, ratio);
+        g2.drawString(room.getSpaceId(), x, y);
     }
 
     private void printAgent(Agent agent, Graphics2D g2) {
@@ -56,13 +74,14 @@ public class MazePanel extends JPanel {
         g2.draw(vision);
         g2.fill(vision);
 
-        double x = normalizeCoordinate(agent.getX(), minX, ratio);
-        double y = normalizeCoordinate(agent.getY(), minY, ratio);
+        Location location = agent.getLocation();
+        double x = normalizeCoordinate(location.positionX, minX, ratio);
+        double y = normalizeCoordinate(location.positionY, minY, ratio);
 
 //        g2.setStroke(new BasicStroke(1));
 //        java.util.List<Vision> visions = new ArrayList<>(agent.getVisions());
 //        for (Vision vision : visions) {
-//            double result = vision.getFitness();
+//            double result = vision.getFactor();
 //            if (result < 0.0) {
 //                g2.setColor(Color.yellow);
 //            } else {
@@ -77,12 +96,12 @@ public class MazePanel extends JPanel {
         Ellipse2D.Double ellipse = new Ellipse2D.Double(x - 3.5, y - 3.5, 7.0, 7.0);
         g2.draw(ellipse);
         g2.fill(ellipse);
-        g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(agent.getX(), agent.getAlpha(), 0, 0.1),
-                getVisionYCoordinate(agent.getY(), agent.getAlpha(), 0, 0.1)));
+        g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(location.positionX, location.alpha, 0, 0.1),
+                getVisionYCoordinate(location.positionY, location.alpha, 0, 0.1)));
         g2.setColor(Color.black);
     }
 
-    private Polygon getVisionPolygon(java.util.List<Vision> visions){
+    private Polygon getVisionPolygon(java.util.List<Vision> visions) {
 
         Collections.sort(visions, new Comparator<Vision>() {
             @Override
@@ -96,20 +115,21 @@ public class MazePanel extends JPanel {
 
         int[] xpoints = new int[visions.size() + 2];
         int[] ypoints = new int[visions.size() + 2];
-        Long x = Math.round(normalizeCoordinate(agent.getX(), minX, ratio));
+        Location location = agent.getLocation();
+        Long x = Math.round(normalizeCoordinate(location.positionX, minX, ratio));
         xpoints[0] = Integer.valueOf(x.intValue());
-        Long y = Math.round(normalizeCoordinate(agent.getY(), minY, ratio));
+        Long y = Math.round(normalizeCoordinate(location.positionY, minY, ratio));
         ypoints[0] = Integer.valueOf(y.intValue());
 
-        for (int i = 0; i < visions.size(); i++){
+        for (int i = 0; i < visions.size(); i++) {
             Vision vision = visions.get(i);
-            x = Math.round(getVisionXCoordinate(agent.getX(), agent.getAlpha(), vision.getAngle(), vision.getDistance()));
-            y = Math.round(getVisionYCoordinate(agent.getY(), agent.getAlpha(), vision.getAngle(), vision.getDistance()));
-            xpoints[i+1] = Integer.valueOf(x.intValue());
-            ypoints[i+1] = Integer.valueOf(y.intValue());
+            x = Math.round(getVisionXCoordinate(location.positionX, location.alpha, vision.getAngle(), vision.getDistance()));
+            y = Math.round(getVisionYCoordinate(location.positionY, location.alpha, vision.getAngle(), vision.getDistance()));
+            xpoints[i + 1] = Integer.valueOf(x.intValue());
+            ypoints[i + 1] = Integer.valueOf(y.intValue());
         }
-        xpoints[xpoints.length -1] = xpoints[0];
-        ypoints[ypoints.length -1] = ypoints[0];
+        xpoints[xpoints.length - 1] = xpoints[0];
+        ypoints[ypoints.length - 1] = ypoints[0];
         return new Polygon(xpoints, ypoints, visions.size());
     }
 

@@ -1,5 +1,6 @@
 package pl.edu.agh.capo.simulation;
 
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.scheduler.Scheduler;
 
@@ -13,17 +14,15 @@ public class MeasureSimulator implements Runnable {
     private final Iterator<Measure> measures;
     private final ScheduledExecutorService executorService;
     private final Scheduler scheduler;
-    private final int periodTime;
 
-    public MeasureSimulator(Iterator<Measure> measures, Scheduler scheduler, int periodTime) {
+    public MeasureSimulator(Iterator<Measure> measures, Scheduler scheduler) {
         this.measures = measures;
         this.scheduler = scheduler;
-        this.periodTime = periodTime;
         executorService = new ScheduledThreadPoolExecutor(1);
     }
 
     public void start() {
-        executorService.scheduleAtFixedRate(this, 0, periodTime, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(this, 0, CapoRobotConstants.INTERVAL_TIME, TimeUnit.MILLISECONDS);
     }
 
     public void stop() {

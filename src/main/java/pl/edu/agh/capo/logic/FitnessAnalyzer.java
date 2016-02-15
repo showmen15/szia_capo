@@ -30,7 +30,7 @@ public class FitnessAnalyzer {
     }
 
     public FitnessAnalyzer(Room room, Location location) {
-        this(room, location.positionX, location.positionY, location.direction);
+        this(room, location.positionX, location.positionY, location.alpha);
     }
 
     private void findLimitAngle() {

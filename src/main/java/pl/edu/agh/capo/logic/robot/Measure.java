@@ -13,10 +13,14 @@ public class Measure {
     private final List<Vision> visions;
 
     public Measure(Date datetime, double rightVelocity, double leftVelocity, List<Vision> visions) {
-        this.leftVelocity = leftVelocity;
-        this.rightVelocity = rightVelocity;
+        this.leftVelocity = milistoMeters(leftVelocity);
+        this.rightVelocity = milistoMeters(rightVelocity);
         this.datetime = datetime;
         this.visions = visions;
+    }
+
+    private double milistoMeters(double velocity) {
+        return velocity / 1000;
     }
 
     public double getLeftVelocity() {
