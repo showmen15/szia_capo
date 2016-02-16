@@ -3,6 +3,7 @@ package pl.edu.agh.capo.hough.basic;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.logic.robot.Measure;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,8 +37,8 @@ public class BasicHoughTransform implements HoughTransform {
         houghValues = new int[THETA_COUNT][DOUBLE_HOUGH_SIZE];
     }
 
-    public void run(List<Vision> visions) {
-        visions.forEach(this::addPoint);
+    public void run(Measure measure) {
+        measure.getVisionsProbe().forEach(this::addPoint);
     }
 
     public void addPoint(Vision vision) {

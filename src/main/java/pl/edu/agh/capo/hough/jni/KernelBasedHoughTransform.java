@@ -3,7 +3,7 @@ package pl.edu.agh.capo.hough.jni;
 import org.apache.log4j.Logger;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.common.Line;
-import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.logic.robot.Measure;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 
 public class KernelBasedHoughTransform implements HoughTransform {
 
-    private static final int VISION_IMAGE_SIZE = 100;
+    private static final int VISION_IMAGE_SIZE = 250;
     private static final Logger logger = Logger.getLogger(JniKernelHough.class);
 
     private VisionImage visionImage;
@@ -22,8 +22,8 @@ public class KernelBasedHoughTransform implements HoughTransform {
 
 
     @Override
-    public void run(List<Vision> visions) {
-        visionImage = new VisionImage(visions, VISION_IMAGE_SIZE);
+    public void run(Measure measure) {
+        visionImage = new VisionImage(measure.getVisions(), VISION_IMAGE_SIZE);
         try {
             lines = new JniKernelHough().kht(visionImage.toByteArray(), VISION_IMAGE_SIZE, VISION_IMAGE_SIZE, 5, 1.0, 0.5, 0.002, 2.0);
             //lines = lines.stream().filter(distinctByKey(Line::getTheta)).collect(Collectors.toList());

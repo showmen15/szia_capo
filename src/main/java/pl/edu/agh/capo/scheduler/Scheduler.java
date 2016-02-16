@@ -1,7 +1,7 @@
 package pl.edu.agh.capo.scheduler;
 
 import pl.edu.agh.capo.hough.HoughTransform;
-import pl.edu.agh.capo.hough.basic.BasicHoughTransform;
+import pl.edu.agh.capo.hough.jni.KernelBasedHoughTransform;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
@@ -76,7 +76,7 @@ public class Scheduler {
 
         private final int[] times;
         private final Measure measure;
-        private final HoughTransform houghTransform = new BasicHoughTransform();
+        private final HoughTransform houghTransform = new KernelBasedHoughTransform();
 
         private Agent currentAgent;
         private int currentTime;
@@ -119,7 +119,7 @@ public class Scheduler {
         @Override
         public void run() {
             //long time = System.currentTimeMillis();
-            houghTransform.run(measure.getVisions());
+            houghTransform.run(measure);
 
             divider.getAgentFactorInfos().forEach(this::updateMeasure);
             if (listener != null) {

@@ -43,7 +43,7 @@ public class Agent {
     }
 
     public void setMeasure(Measure measure, List<Line> lines, double deltaTimeInMillis) {
-        this.visions = measure.getVisions();
+        this.visions = measure.getVisionsProbe();
         angles.clear();
         for (Line line : lines) {
             angles.add(normalizeAlpha(line.getTheta()));
@@ -226,13 +226,20 @@ public class Agent {
     }
 
     public void estimateRandom() {
-        Coordinates coords = room.getRandomPosition();
+        Coordinates coords = findRandomCoordinates();
         if (angles.size() == 0) {
             double angle = random.nextDouble() * 360 - 180;
             tryAndChangePositionIfBetterEstimation(coords, angle);
         } else {
             updateAlphaWithVisionAngles(coords);
         }
+    }
+
+    private Coordinates findRandomCoordinates() {
+        if (isTheBest) {
+            return room.getRandomPositionInNeighbourhoodOf(getLocation());
+        }
+        return room.getRandomPosition();
     }
 
     private void tryAndChangePositionIfBetterEstimation(Coordinates coords, Double angle) {

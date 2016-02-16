@@ -1,5 +1,6 @@
 package pl.edu.agh.capo.logic;
 
+import pl.edu.agh.capo.logic.common.Location;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.Wall;
@@ -12,21 +13,27 @@ import java.util.Random;
 
 public class Room {
 
+    private static final int NEIGHBOURHOOD_FACTOR = 6;
+
     private final List<Wall> walls;
     private final List<Gate> gates;
 
-    private double minY;
-    private double maxY;
-    private double minX;
-    private double maxX;
+    private final double minY;
+    private final double maxY;
+    private final double minX;
+    private final double maxX;
 
     private final List<Gate> northGates;
     private final List<Gate> southGates;
     private final List<Gate> westGates;
     private final List<Gate> eastGates;
+
+    private final double neighbourhoodX;
+    private final double neighbourhoodY;
+
     private final String spaceId;
 
-    private Random random = new Random();
+    private final Random random = new Random();
     private Map<String, Room> gateRooms;
 
     public Room(List<Wall> walls, List<Gate> gates, String spaceId) {
@@ -39,7 +46,14 @@ public class Room {
         westGates = new ArrayList<>();
         eastGates = new ArrayList<>();
 
-        findCorners();
+        minY = MazeHelper.getMinY(walls);
+        maxY = MazeHelper.getMaxY(walls);
+        minX = MazeHelper.getMinX(walls);
+        maxX = MazeHelper.getMaxX(walls);
+
+        neighbourhoodX = (maxX - minX) / (2 * NEIGHBOURHOOD_FACTOR);
+        neighbourhoodY = (maxY - minY) / (2 * NEIGHBOURHOOD_FACTOR);
+
         splitGates();
     }
 
@@ -87,13 +101,6 @@ public class Room {
         return spaceId;
     }
 
-    private void findCorners() {
-        minY = MazeHelper.getMinY(walls);
-        maxY = MazeHelper.getMaxY(walls);
-        minX = MazeHelper.getMinX(walls);
-        maxX = MazeHelper.getMaxX(walls);
-    }
-
     private void splitGates() {
         for (Gate gate : gates) {
             if (gate.getFrom().getX() == gate.getTo().getX()) {
@@ -117,6 +124,18 @@ public class Room {
     }
 
     public Coordinates getRandomPosition() {
+        return getRandom(minX, maxX, minY, maxY);
+    }
+
+    public Coordinates getRandomPositionInNeighbourhoodOf(Location location) {
+        double minX = location.positionX - neighbourhoodX;
+        double maxX = location.positionX + neighbourhoodX;
+        double minY = location.positionY - neighbourhoodY;
+        double maxY = location.positionY + neighbourhoodY;
+        return getRandom(minX, maxX, minY, maxY);
+    }
+
+    private Coordinates getRandom(double minX, double maxX, double minY, double maxY) {
         Coordinates coordinates = new Coordinates();
         double x = random.nextDouble() * (maxX - minX) + minX;
         double y = random.nextDouble() * (maxY - minY) + minY;
@@ -129,7 +148,7 @@ public class Room {
         this.gateRooms = gateRooms;
     }
 
-    public Room getRoomBehindGate(Gate gate){
+    public Room getRoomBehindGate(Gate gate) {
         return gateRooms.get(gate.getId());
     }
 
@@ -139,4 +158,6 @@ public class Room {
                 "spaceId='" + spaceId + '\'' +
                 '}';
     }
+
+
 }

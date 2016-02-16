@@ -13,7 +13,6 @@ import java.util.*;
 
 public class MeasureFileReader implements Iterator<Measure> {
 
-    private static final int READ_JUMP = 24;     //24 for 30 readings
     private static final Logger logger = Logger.getLogger(MeasureFileReader.class);
 
     private Iterator<Measure> measures;
@@ -50,7 +49,7 @@ public class MeasureFileReader implements Iterator<Measure> {
     private Measure createMeasure(String fileLine) throws ParseException {
         String[] data = fileLine.split(";");
         List<Vision> visions = new ArrayList<>();
-        for (int i = 3; i < data.length; i += READ_JUMP * 2) {
+        for (int i = 3; i < data.length; i += 2) {
             Vision vision = new Vision(Double.parseDouble(data[i + 1]), Double.parseDouble(data[i]) / 1000);
             visions.add(vision);
         }

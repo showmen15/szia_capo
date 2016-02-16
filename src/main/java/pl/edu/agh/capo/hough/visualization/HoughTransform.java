@@ -4,6 +4,7 @@ import javafx.util.Pair;
 import pl.edu.agh.capo.hough.basic.BasicHoughTransform;
 import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.logic.robot.Measure;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -56,7 +57,7 @@ public class HoughTransform {
     private final static int HALF_SIZE = SIZE / 2;
     private final static int NORMALIZATION = 6;
 
-    public static void run(java.util.List<Vision> visionList) {
+    public static void run(Measure measure) {
         String filename = "C:\\Users\\Ucash\\Desktop\\lol.png";
 
         // load the file using Java's imageIO library
@@ -70,7 +71,7 @@ public class HoughTransform {
         }
 
         pl.edu.agh.capo.hough.HoughTransform h = new BasicHoughTransform();
-        h.run(visionList);
+        h.run(measure);
 
         // get the lines out
         java.util.List<Line> lines = h.getLines(6, 10);
@@ -92,7 +93,7 @@ public class HoughTransform {
         image.setRGB(HALF_SIZE-1, HALF_SIZE+1, Color.blue.getRGB());
         image.setRGB(HALF_SIZE+1, HALF_SIZE+1, Color.blue.getRGB());
 
-        for (Vision vision : visionList){
+        for (Vision vision : measure.getVisionsProbe()) {
             Pair<Integer, Integer> pair = addPoint(vision);
             int x = pair.getKey();
             int y = pair.getValue();
