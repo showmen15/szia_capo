@@ -251,28 +251,24 @@ public class Agent {
 
     private void changePositionIfBetterEstimation(double estimated, Coordinates coords, double angle) {
         if (estimated > fitness) {
-            updateFitnessAndRecalculateEnergy(estimated);
+            this.fitness = estimated;
             Location location = new Location(coords, angle);
             motionModel.applyLocation(location);
         }
     }
 
-    private synchronized void recalculateEnergy() {
+    public void recalculateEnergy() {
         energyCount++;
         energy += (fitness / energyCount - energy / energyCount);
         //System.out.println(energy);
     }
 
     public double estimateFitness() {
+        recalculateEnergy();
         double fitness = estimateFitness(new FitnessAnalyzer(room, getLocation()));
-        updateFitnessAndRecalculateEnergy(fitness);
+        this.fitness = fitness;
         updateAlphaWithVisionAngles(getLocation().getCoordinates());
         return fitness;
-    }
-
-    private void updateFitnessAndRecalculateEnergy(double fitness) {
-        this.fitness = fitness;
-        recalculateEnergy();
     }
 
     public double getEnergy() {
