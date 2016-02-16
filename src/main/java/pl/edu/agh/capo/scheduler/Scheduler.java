@@ -35,8 +35,8 @@ public class Scheduler {
         }
     }
 
-    private void startWorker() {
-        new Thread(new Worker(currentMeasure)).start();
+    private Thread createWorker() {
+        return new Thread(new Worker(currentMeasure));
     }
 
     public void update(Measure measure) {
@@ -45,8 +45,14 @@ public class Scheduler {
         } else if (divider != null) {
             calculateMeasuresTimeDifference(measure);
             divider.updateFactors();
-            startWorker();
+            Thread worker = createWorker();
+            worker.start();
             divider.recalculate();
+            try {
+                worker.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 

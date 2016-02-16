@@ -132,4 +132,11 @@ public class Room {
     public Room getRoomBehindGate(Gate gate){
         return gateRooms.get(gate.getId());
     }
+
+    @Override
+    public String toString() {
+        return "Room{" +
+                "spaceId='" + spaceId + '\'' +
+                '}';
+    }
 }

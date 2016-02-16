@@ -9,7 +9,7 @@ import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
 import pl.edu.agh.capo.scheduler.Scheduler;
-import pl.edu.agh.capo.scheduler.divider.FitnessTimeDivider;
+import pl.edu.agh.capo.scheduler.divider.EnergyTimeDivider;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
 import javax.swing.*;
@@ -28,7 +28,8 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     private JLabel agentsLabel;
     private JLabel measuredProbability;
 
-    private int currentAgentIndex;
+    // private int currentAgentIndex;
+    private Agent currentAgent;
     private JCheckBox bestAgentCheckbox;
     private JCheckBox measureCheckbox;
     private TimeDivider timeDivider;
@@ -46,7 +47,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     public void updateAgents(MazeMap map) {
-        timeDivider = new FitnessTimeDivider(CapoRobotConstants.INTERVAL_TIME, map.getSpaces().size());
+        timeDivider = new EnergyTimeDivider(CapoRobotConstants.INTERVAL_TIME, map.getSpaces().size());
         for (Room room : MazeHelper.buildRooms(map)) {
             Agent agent = new Agent(room, timeDivider);
             timeDivider.addAgent(agent);
@@ -57,13 +58,14 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
         scheduler.setListener(this::onMeasure);
         scheduler.setUpdateMeasures(measureCheckbox.isSelected());
 
-        showAgent(0);
+        showAgent(timeDivider.getAgents().get(0));
 
         setButtonsEnable(true);
     }
 
     private Agent currentAgent() {
-        return timeDivider.getAgents().get(currentAgentIndex);
+        // return timeDivider.getAgents().get(currentAgentIndex);
+        return currentAgent;
     }
 
     @Override
@@ -216,22 +218,33 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
      }
  */
     private ActionListener nextAgentButtonListener() {
-        return e -> showAgent((currentAgentIndex + 1) % timeDivider.getAgentCount());
+        //return e -> showAgent((currentAgentIndex + 1) % timeDivider.getAgentCount());
+        return e -> {
+        };
     }
 
     private ActionListener prevAgentButtonListener() {
-        return e -> {
+        /*return e -> {
             if (currentAgentIndex > 0) {
                 showAgent(currentAgentIndex - 1);
             } else {
                 showAgent(currentAgentIndex + timeDivider.getAgentCount() - 1);
             }
+        };*/
+        return e -> {
         };
     }
-
+/*
     private void showAgent(int index) {
         currentAgentIndex = index;
         Agent agent = currentAgent();
+        agentsLabel.setText(String.format("Agent - %s", agent.getRoom().getSpaceId()));
+        mazePanel.setAgent(agent);
+        updateView();
+    }*/
+
+    private void showAgent(Agent agent) {
+        currentAgent = agent;
         agentsLabel.setText(String.format("Agent - %s", agent.getRoom().getSpaceId()));
         mazePanel.setAgent(agent);
         updateView();

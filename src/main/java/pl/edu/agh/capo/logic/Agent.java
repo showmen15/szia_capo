@@ -53,17 +53,17 @@ public class Agent {
         }
 
         if (deltaTimeInMillis > 0) {
-            //applyMotion(measure, deltaTimeInMillis);
+            applyMotion(measure, deltaTimeInMillis);
         }
     }
 
-    private synchronized void applyMotion(Measure measure, double measureDiffInSeconds) {
-        Location location = motionModel.getLocationAfterTime(measure, measureDiffInSeconds);
+    private synchronized void applyMotion(Measure measure, double deltaTimeInMillis) {
+        Location location = motionModel.getLocationAfterTime(measure, deltaTimeInMillis);
         location.alpha = normalizeAlpha(location.alpha);
-        updateLocationAndRoomIfNeeded(measure, location);
+        updateLocationAndRoomIfNeeded(measure, location, deltaTimeInMillis);
     }
 
-    private void updateLocationAndRoomIfNeeded(Measure measure, Location location) {
+    private void updateLocationAndRoomIfNeeded(Measure measure, Location location, double deltaTimeInMillis) {
         Gate gate;
         if (location.positionX <= room.getMinX()) {
             gate = checkWestGates(location);
@@ -74,11 +74,11 @@ public class Agent {
         } else if (location.positionY >= room.getMaxY()) {
             gate = checkSouthGates(location);
         } else {
-            motionModel.applyLocation(location, measure);
+            motionModel.applyLocation(location, measure, deltaTimeInMillis);
             return;
         }
         if (gate != null) {
-            motionModel.applyLocation(location, measure);
+            motionModel.applyLocation(location, measure, deltaTimeInMillis);
             timeDivider.addAgentInNextInterval(new Agent(this.room, timeDivider));
             this.room = room.getRoomBehindGate(gate);
         }
@@ -281,5 +281,12 @@ public class Agent {
 
     public void setLocation(Location location) {
         motionModel.applyLocation(location);
+    }
+
+    @Override
+    public String toString() {
+        return "Agent{" +
+                "room=" + room +
+                '}';
     }
 }

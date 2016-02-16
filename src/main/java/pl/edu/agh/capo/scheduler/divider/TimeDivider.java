@@ -1,14 +1,18 @@
 package pl.edu.agh.capo.scheduler.divider;
 
 import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.Room;
 
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 public abstract class TimeDivider {
     private final int intervalTime;
-    private final List<Agent> agents = new LinkedList<>();
+    private final List<Agent> agents = new CopyOnWriteArrayList<>();
 
     private final List<AgentFactorInfo> agentFactorInfos = new LinkedList<>();
     // Next interval
@@ -44,7 +48,6 @@ public abstract class TimeDivider {
         agents.add(agent);
         AgentFactorInfo agentFactorInfo = createAgentInfo(agentFactorInfos.size(), agent);
         agentFactorInfos.add(agentFactorInfo);
-        setTime(agentFactorInfo, intervalTime / agentCount);
     }
 
     private void updateFactor(AgentFactorInfo info) {
@@ -58,8 +61,35 @@ public abstract class TimeDivider {
 
     public void updateFactors() {
         addRequestedAgents();
+        removeExcessAgents();
+        updateIndexes();
         intervalFactorSum = 0.0;
         agentFactorInfos.forEach(this::updateFactor);
+    }
+
+    private void updateIndexes() {
+        for (int i = 0; i < agentCount; i++) {
+            agentFactorInfos.get(i).index = i;
+        }
+    }
+
+    private void removeExcessAgents() {
+        Map<Room, List<AgentFactorInfo>> agentsByRoom = agentFactorInfos.stream().collect(
+                Collectors.groupingBy(agentFactorInfo -> agentFactorInfo.getAgent().getRoom()));
+        agentsByRoom.forEach((room, list) -> removeAgentsIfNeeded(list));
+    }
+
+    private void removeAgentsIfNeeded(List<AgentFactorInfo> agentFactorInfos) {
+        if (agentFactorInfos.size() > 1) {
+            AgentFactorInfo max = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
+            agentFactorInfos.stream().filter(agentFactorInfo -> agentFactorInfo.getFactor() * 2 < max.getFactor()).forEach(this::removeAgent);
+        }
+    }
+
+    private void removeAgent(AgentFactorInfo agentFactorInfoToRemove) {
+        agents.remove(agentFactorInfoToRemove.getAgent());
+        agentFactorInfos.remove(agentFactorInfoToRemove);
+        agentCount--;
     }
 
     public int[] getTimes() {
@@ -127,26 +157,22 @@ public abstract class TimeDivider {
         return agents;
     }
 
-    public int updateTheBest() {
+    public Agent updateTheBest() {
         Agent best = agents.stream()
                 .max(createAgentComparator())
                 .get();
         agents.forEach(agent -> agent.setIsTheBest(false));
         best.setIsTheBest(true);
-        return agents.indexOf(best);
-    }
-
-    public int getAgentCount() {
-        return agentCount;
+        return best;
     }
 
     public abstract class AgentFactorInfo {
         private static final int MAX_SLEPT_ITERATIONS = 5;
 
-        private final int index;
+        private int index;
         private final Agent agent;
         protected double factor;
-        private int sleptIterations = 0;
+        private int sleptIterations = MAX_SLEPT_ITERATIONS;
 
         public AgentFactorInfo(int index, Agent agent) {
             this.index = index;
