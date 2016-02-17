@@ -24,4 +24,9 @@ public class FitnessTimeDivider extends TimeDivider {
     public Comparator<Agent> createAgentComparator() {
         return (a1, a2) -> Double.compare(a1.getFitness(), a2.getFitness());
     }
+
+    @Override
+    public double getFactor(Agent agent) {
+        return agent.getFitness();
+    }
 }

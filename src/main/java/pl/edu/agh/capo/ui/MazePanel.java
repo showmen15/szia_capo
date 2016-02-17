@@ -29,10 +29,13 @@ public class MazePanel extends JPanel {
 
     private Agent agent;
 
+    private double factor;
+
     private java.util.List<Agent> agentList;
 
-    public void setAgent(Agent agent) {
+    public void setAgent(Agent agent, double factor) {
         this.agent = agent;
+        this.factor = factor;
     }
 
     public void setAgents(java.util.List<Agent> agentList) {
@@ -69,7 +72,7 @@ public class MazePanel extends JPanel {
     }
 
     private void printAgent(Agent agent, Graphics2D g2) {
-        g2.setColor(countColor(agent.getFitness()));
+        g2.setColor(countColor(factor));
         Polygon vision = getVisionPolygon(agent.getVisions());
         g2.draw(vision);
         g2.fill(vision);

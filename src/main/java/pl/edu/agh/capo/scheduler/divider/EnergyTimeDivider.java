@@ -14,6 +14,7 @@ public class EnergyTimeDivider extends TimeDivider {
         return new AgentFactorInfo(index, agent) {
             @Override
             protected double estimatedFactor() {
+                agent.recalculateEnergy();
                 return agent.getEnergy();
             }
         };
@@ -22,5 +23,10 @@ public class EnergyTimeDivider extends TimeDivider {
     @Override
     public Comparator<Agent> createAgentComparator() {
         return (a1, a2) -> Double.compare(a1.getEnergy(), a2.getEnergy());
+    }
+
+    @Override
+    public double getFactor(Agent agent) {
+        return agent.getEnergy();
     }
 }

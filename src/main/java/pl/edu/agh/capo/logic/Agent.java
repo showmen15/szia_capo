@@ -15,16 +15,18 @@ import java.util.function.Function;
 
 public class Agent {
 
+    private static final int FITNESS_QUEUE_MAX_SIZE = 10;
     private final Random random = new Random();
     private final CapoRobotMotionModel motionModel;
     private final TimeDivider timeDivider;
     private List<Vision> visions = new ArrayList<>();
     private List<Double> angles = new CopyOnWriteArrayList<>();
     private double fitness;
-    private double energy;
-    private long energyCount;
+    private double energySum;
     private Room room;
     private boolean isTheBest;
+
+    private Queue<Double> fitnesses = new LinkedList<>();
 
     public Agent(Room room, TimeDivider timeDivider) {
         this.timeDivider = timeDivider;
@@ -75,14 +77,21 @@ public class Agent {
             gate = checkSouthGates(location);
         } else {
             motionModel.applyLocation(location, measure, deltaTimeInMillis);
+            //printIfBEst(measure.toString());
             return;
         }
         if (gate != null) {
             motionModel.applyLocation(location, measure, deltaTimeInMillis);
             timeDivider.addAgentInNextInterval(new Agent(this.room, timeDivider));
             this.room = room.getRoomBehindGate(gate);
+            //rintIfBEst("Changed to " + room.getSpaceId());
         }
+    }
 
+    private void printIfBEst(String msg) {
+        if (isTheBest) {
+            System.out.println(msg);
+        }
     }
 
     private Gate checkSouthGates(Location location) {
@@ -265,13 +274,15 @@ public class Agent {
     }
 
     public void recalculateEnergy() {
-        energyCount++;
-        energy += (fitness / energyCount - energy / energyCount);
+        fitnesses.add(fitness);
+        energySum += fitness;
+        if (fitnesses.size() > FITNESS_QUEUE_MAX_SIZE) {
+            energySum -= fitnesses.poll();
+        }
         //System.out.println(energy);
     }
 
     public double estimateFitness() {
-        recalculateEnergy();
         double fitness = estimateFitness(new FitnessAnalyzer(room, getLocation()));
         this.fitness = fitness;
         updateAlphaWithVisionAngles(getLocation().getCoordinates());
@@ -279,7 +290,7 @@ public class Agent {
     }
 
     public double getEnergy() {
-        return energy;
+        return fitnesses.size() > 0 ? energySum / fitnesses.size() : 0.0;
     }
 
     public void setLocation(Location location) {

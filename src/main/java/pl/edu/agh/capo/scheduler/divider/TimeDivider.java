@@ -2,6 +2,8 @@ package pl.edu.agh.capo.scheduler.divider;
 
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.Room;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
+import pl.edu.agh.capo.maze.Coordinates;
 
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -24,7 +26,10 @@ public abstract class TimeDivider {
 
     //Statistics
     private double factorMedium = 0.0;
+    private double bestFactorMedium = 0.0;
     private long intervalCount = 0;
+    private Coordinates bestCoordinates;
+    private int jumpsCount;
 
     public TimeDivider(int intervalTime, int agentCount) {
         this.agentCount = agentCount;
@@ -37,9 +42,12 @@ public abstract class TimeDivider {
     }
 
     public void printAndResetStatistics() {
-        System.out.println(Double.toString(factorMedium).replace('.', ','));
+        System.out.println(Double.toString(factorMedium).replace('.', ',') + "\t" + Double.toString(bestFactorMedium).replace('.', ',') +
+                "\t" + jumpsCount);
         factorMedium = 0.0;
         intervalCount = 0;
+        bestFactorMedium = 0.0;
+        jumpsCount = 0;
     }
 
     protected abstract AgentFactorInfo createAgentInfo(int index, Agent agent);
@@ -130,6 +138,22 @@ public abstract class TimeDivider {
         intervalCount++;
         double intervalFactorMedium = intervalFactorSum / agentCount;
         factorMedium += (intervalFactorMedium - factorMedium) / intervalCount;
+        AgentFactorInfo best = getTheBest();
+        bestFactorMedium += (best.getFactor() - bestFactorMedium) / intervalCount;
+        updateJumps(best.getAgent());
+    }
+
+    private void updateJumps(Agent best) {
+        Coordinates coordinates = best.getLocation().getCoordinates();
+        if (bestCoordinates != null) {
+            double dx = coordinates.getX() - bestCoordinates.getX();
+            double dy = coordinates.getY() - bestCoordinates.getY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > CapoRobotConstants.MAX_INTERVAL_DISTANCE) {
+                jumpsCount++;
+            }
+        }
+        bestCoordinates = coordinates;
     }
 
     private int distributedTimeToStarvingAgents() {
@@ -157,6 +181,12 @@ public abstract class TimeDivider {
         return agents;
     }
 
+    private AgentFactorInfo getTheBest() {
+        return agentFactorInfos.stream()
+                .max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor()))
+                .get();
+    }
+
     public Agent updateTheBest() {
         Agent best = agents.stream()
                 .max(createAgentComparator())
@@ -165,6 +195,8 @@ public abstract class TimeDivider {
         best.setIsTheBest(true);
         return best;
     }
+
+    public abstract double getFactor(Agent agent);
 
     public abstract class AgentFactorInfo {
         private static final int MAX_SLEPT_ITERATIONS = 5;

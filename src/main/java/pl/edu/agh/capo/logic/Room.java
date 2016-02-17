@@ -132,7 +132,7 @@ public class Room {
         double maxX = location.positionX + neighbourhoodX;
         double minY = location.positionY - neighbourhoodY;
         double maxY = location.positionY + neighbourhoodY;
-        return getRandom(minX, maxX, minY, maxY);
+        return getRandom(Math.max(minX, this.minX), Math.min(maxX, this.maxX), Math.max(minY, this.minY), Math.min(maxY, this.maxY));
     }
 
     private Coordinates getRandom(double minX, double maxX, double minY, double maxY) {

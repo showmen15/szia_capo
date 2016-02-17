@@ -49,4 +49,14 @@ public class Measure {
     public long getDatetime() {
         return datetime.getTime();
     }
+
+    @Override
+    public String toString() {
+        return "Measure{" +
+                "leftVelocity=" + leftVelocity +
+                ", rightVelocity=" + rightVelocity +
+                ", datetime=" + datetime +
+                ", visions=" + visions +
+                '}';
+    }
 }
