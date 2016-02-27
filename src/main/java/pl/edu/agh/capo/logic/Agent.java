@@ -7,7 +7,6 @@ import pl.edu.agh.capo.logic.robot.CapoRobotMotionModel;
 import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
-import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -18,7 +17,6 @@ public class Agent {
     private static final int FITNESS_QUEUE_MAX_SIZE = 10;
     private final Random random = new Random();
     private final CapoRobotMotionModel motionModel;
-    private final TimeDivider timeDivider;
     private List<Vision> visions = new ArrayList<>();
     private List<Double> angles = new CopyOnWriteArrayList<>();
     private double fitness;
@@ -28,8 +26,7 @@ public class Agent {
 
     private Queue<Double> fitnesses = new LinkedList<>();
 
-    public Agent(Room room, TimeDivider timeDivider) {
-        this.timeDivider = timeDivider;
+    public Agent(Room room) {
         this.room = room;
         this.motionModel = createCapoRobotMotionModel();
     }
@@ -82,7 +79,6 @@ public class Agent {
         }
         if (gate != null) {
             motionModel.applyLocation(location, measure, deltaTimeInMillis);
-            timeDivider.addAgentInNextInterval(new Agent(this.room, timeDivider));
             this.room = room.getRoomBehindGate(gate);
             //rintIfBEst("Changed to " + room.getSpaceId());
         }

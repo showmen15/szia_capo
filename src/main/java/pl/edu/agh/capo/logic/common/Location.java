@@ -36,4 +36,30 @@ public class Location implements Serializable {
         coordinates.setY(positionY);
         return coordinates;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Location location = (Location) o;
+
+        if (Double.compare(location.positionX, positionX) != 0) return false;
+        if (Double.compare(location.positionY, positionY) != 0) return false;
+        return Double.compare(location.alpha, alpha) == 0;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        temp = Double.doubleToLongBits(positionX);
+        result = (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(positionY);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(alpha);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
 }

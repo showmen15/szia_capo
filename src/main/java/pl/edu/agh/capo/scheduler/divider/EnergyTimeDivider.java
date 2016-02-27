@@ -1,12 +1,14 @@
 package pl.edu.agh.capo.scheduler.divider;
 
 import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.Room;
 
 import java.util.Comparator;
+import java.util.List;
 
 public class EnergyTimeDivider extends TimeDivider {
-    public EnergyTimeDivider(int intervalTime, int agentCount) {
-        super(intervalTime, agentCount);
+    public EnergyTimeDivider(List<Room> rooms, int agentCount, int intervalTime) {
+        super(rooms, agentCount, intervalTime);
     }
 
     @Override

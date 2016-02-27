@@ -9,7 +9,7 @@ import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
 import pl.edu.agh.capo.scheduler.Scheduler;
-import pl.edu.agh.capo.scheduler.divider.EnergyTimeDivider;
+import pl.edu.agh.capo.scheduler.divider.FitnessTimeDivider;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
 import javax.swing.*;
@@ -47,9 +47,10 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     }
 
     public void updateAgents(MazeMap map) {
-        timeDivider = new EnergyTimeDivider(CapoRobotConstants.INTERVAL_TIME, map.getSpaces().size());
-        for (Room room : MazeHelper.buildRooms(map)) {
-            Agent agent = new Agent(room, timeDivider);
+        java.util.List<Room> rooms = MazeHelper.buildRooms(map);
+        timeDivider = new FitnessTimeDivider(rooms, map.getSpaces().size(), CapoRobotConstants.INTERVAL_TIME);
+        for (Room room : rooms) {
+            Agent agent = new Agent(room);
             timeDivider.addAgent(agent);
         }
         mazePanel.setMaze(map);

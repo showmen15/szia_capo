@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 
 public abstract class TimeDivider {
     private final int intervalTime;
-    private final List<Agent> agents = new CopyOnWriteArrayList<>();
 
+    private final List<Room> rooms;
+    private final List<Agent> agents = new CopyOnWriteArrayList<>();
     private final List<AgentFactorInfo> agentFactorInfos = new LinkedList<>();
-    // Next interval
-    private final List<Agent> agentsToAddInNextInterval = new LinkedList<>();
     private int agentCount;
+
     // Current interval
     private int[] currentIntervalTimes;
     private double intervalFactorSum;
@@ -31,7 +31,8 @@ public abstract class TimeDivider {
     private Coordinates bestCoordinates;
     private int jumpsCount;
 
-    public TimeDivider(int intervalTime, int agentCount) {
+    public TimeDivider(List<Room> rooms, int agentCount, int intervalTime) {
+        this.rooms = rooms;
         this.agentCount = agentCount;
         this.intervalTime = intervalTime;
         reinitializeCurrentIntervalTimes();
@@ -43,7 +44,7 @@ public abstract class TimeDivider {
 
     public void printAndResetStatistics() {
         System.out.println(Double.toString(factorMedium).replace('.', ',') + "\t" + Double.toString(bestFactorMedium).replace('.', ',') +
-                "\t" + jumpsCount);
+                "\t" + jumpsCount + "\t" + agentCount);
         factorMedium = 0.0;
         intervalCount = 0;
         bestFactorMedium = 0.0;
@@ -68,11 +69,20 @@ public abstract class TimeDivider {
     }
 
     public void updateFactors() {
-        addRequestedAgents();
         removeExcessAgents();
+        addAgentInEmptyRooms();
         updateIndexes();
         intervalFactorSum = 0.0;
         agentFactorInfos.forEach(this::updateFactor);
+    }
+
+    protected void addAgentInEmptyRooms() {
+        List<Room> filledRooms = agentFactorInfos.stream().map(agentFactorInfo -> agentFactorInfo.getAgent().getRoom()).collect(Collectors.toList());
+        rooms.stream().filter(room -> !filledRooms.contains(room)).forEach(emptyRoom -> {
+            addAgent(new Agent(emptyRoom));
+            agentCount++;
+        });
+        reinitializeCurrentIntervalTimes();
     }
 
     private void updateIndexes() {
@@ -90,7 +100,7 @@ public abstract class TimeDivider {
     private void removeAgentsIfNeeded(List<AgentFactorInfo> agentFactorInfos) {
         if (agentFactorInfos.size() > 1) {
             AgentFactorInfo max = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
-            agentFactorInfos.stream().filter(agentFactorInfo -> agentFactorInfo.getFactor() * 2 < max.getFactor()).forEach(this::removeAgent);
+            agentFactorInfos.stream().filter(agentFactorInfo -> agentFactorInfo.getFactor() * 2 <= max.getFactor() || max.followsSameHyphotesis(agentFactorInfo)).forEach(this::removeAgent);
         }
     }
 
@@ -102,25 +112,6 @@ public abstract class TimeDivider {
 
     public int[] getTimes() {
         return currentIntervalTimes;
-    }
-
-    public void addAgentInNextInterval(Agent agent) {
-        synchronized (agentsToAddInNextInterval) {
-            agentsToAddInNextInterval.add(agent);
-        }
-    }
-
-    private void addRequestedAgents() {
-        synchronized (agentsToAddInNextInterval) {
-            if (agentsToAddInNextInterval.size() > 0) {
-                for (Agent agent : agentsToAddInNextInterval) {
-                    addAgent(agent);
-                    agentCount++;
-                }
-                reinitializeCurrentIntervalTimes();
-                agentsToAddInNextInterval.clear();
-            }
-        }
     }
 
     public void recalculate() {
@@ -236,5 +227,9 @@ public abstract class TimeDivider {
         }
 
         protected abstract double estimatedFactor();
+
+        public boolean followsSameHyphotesis(AgentFactorInfo agentFactorInfo) {
+            return !equals(agentFactorInfo) && getAgent().getLocation().equals(agentFactorInfo.getAgent().getLocation());
+        }
     }
 }

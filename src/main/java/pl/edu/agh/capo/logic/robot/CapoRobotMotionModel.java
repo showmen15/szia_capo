@@ -59,7 +59,7 @@ public class CapoRobotMotionModel {
 
     private Location calculateLocationWithDirectionChange(double velocityRight, double velocityLeft, double deltaTime) {
         double radius = CapoRobotConstants.WHEELS_HALF_DISTANCE * (velocityLeft + velocityRight) / (velocityLeft - velocityRight);
-        double directionInRadians = Math.toRadians(location.alpha);
+        double directionInRadians = getAdjustedDirectionToRadians();
 
         double arcCenterX = location.positionX - radius * Math.sin(directionInRadians);
         double arcCenterY = location.positionY + radius * Math.cos(directionInRadians);
@@ -76,10 +76,17 @@ public class CapoRobotMotionModel {
         return new Location(newX, newY, Math.toDegrees(directionInRadians + angularVelocityDeltaTime));
     }
 
+    /**
+     * Direction is adjusted to motionmodel
+     */
+    private double getAdjustedDirectionToRadians() {
+        return Math.toRadians(location.alpha - 90);
+    }
+
     private Location calculateLocation(double velocityRight, double velocityLeft, double deltaTime) {
         double linearVelocity = getLinearVelocity(velocityRight, velocityLeft);
-        double x = location.positionX + linearVelocity * Math.cos(Math.toRadians(location.alpha) * deltaTime);
-        double y = location.positionY + linearVelocity * Math.sin(Math.toRadians(location.alpha) * deltaTime);
+        double x = location.positionX + linearVelocity * Math.cos(getAdjustedDirectionToRadians() * deltaTime);
+        double y = location.positionY + linearVelocity * Math.sin(getAdjustedDirectionToRadians() * deltaTime);
         return new Location(x, y, location.alpha);
     }
 
