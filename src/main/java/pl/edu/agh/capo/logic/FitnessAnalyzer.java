@@ -1,14 +1,12 @@
 package pl.edu.agh.capo.logic;
 
 import pl.edu.agh.capo.logic.common.Location;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.Gate;
 
 import java.util.List;
 
 public class FitnessAnalyzer {
-
-    private final static double ACCURACY = 0.2;
-    private final static double MAX_RANGE = 5.0;
 
     private Room room;
     private double x;
@@ -53,7 +51,7 @@ public class FitnessAnalyzer {
     }
 
     public double estimate(double angle, double distance) {
-        boolean overMaxRange = distance > MAX_RANGE;
+        boolean overMaxRange = distance > CapoRobotConstants.MAX_VISION_DISTANCE;
         return estimate(angle, distance, overMaxRange);
     }
 
@@ -127,7 +125,7 @@ public class FitnessAnalyzer {
     }
 
     private double estimateInRoomBehindGate(Room room, double x, double y, double angle, double distance, boolean overMaxRange) {
-        if (distance < -ACCURACY) {
+        if (distance < -CapoRobotConstants.VISION_ACCURACY) {
             return 0;
         }
         FitnessAnalyzer fitnessAnalyzer = new FitnessAnalyzer(room, x, y, this.angle);
@@ -168,9 +166,9 @@ public class FitnessAnalyzer {
         }
 
         double diff = Math.abs(distanceToWall - distance);
-        if (diff > ACCURACY) {
+        if (diff > CapoRobotConstants.VISION_ACCURACY) {
             return 0.0;
         }
-        return 1.0 - (diff / ACCURACY);
+        return 1.0 - (diff / CapoRobotConstants.VISION_ACCURACY);
     }
 }

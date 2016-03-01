@@ -3,6 +3,8 @@ package pl.edu.agh.capo.hough.jni;
 import org.apache.log4j.Logger;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.common.Line;
+import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.logic.robot.Measure;
 
 import java.io.IOException;
@@ -11,10 +13,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class KernelBasedHoughTransform implements HoughTransform {
 
-    private static final int VISION_IMAGE_SIZE = 250;
     private static final Logger logger = Logger.getLogger(JniKernelHough.class);
 
     private VisionImage visionImage;
@@ -23,9 +25,16 @@ public class KernelBasedHoughTransform implements HoughTransform {
 
     @Override
     public void run(Measure measure) {
-        visionImage = new VisionImage(measure.getVisions(), VISION_IMAGE_SIZE);
+        visionImage = new VisionImage(feasibleVisions(measure.getVisions()), CapoRobotConstants.VISION_IMAGE_SIZE);
         try {
-            lines = new JniKernelHough().kht(visionImage.toByteArray(), VISION_IMAGE_SIZE, VISION_IMAGE_SIZE, 5, 1.0, 0.5, 0.002, 2.0);
+            lines = new JniKernelHough().kht(visionImage.toByteArray(),
+                    CapoRobotConstants.VISION_IMAGE_SIZE,
+                    CapoRobotConstants.VISION_IMAGE_SIZE,
+                    CapoRobotConstants.KHT_CLUSTER_MIN_SIZE,
+                    CapoRobotConstants.KHT_CLUSTER_MIN_DEVIATION,
+                    CapoRobotConstants.KHT_DELTA,
+                    CapoRobotConstants.KHT_KERNEL_MIN_HEIGHT,
+                    CapoRobotConstants.KHT_N_SIGMAS);
             //lines = lines.stream().filter(distinctByKey(Line::getTheta)).collect(Collectors.toList());
             //List<Line> tmp = new ArrayList<>();
             //lines.forEach(line -> tmp.add(new Line(line.getTheta(), line.getRho())));
@@ -35,6 +44,13 @@ public class KernelBasedHoughTransform implements HoughTransform {
         } catch (IOException e) {
             logger.error("Could not extraxt lines", e);
         }
+    }
+
+    private List<Vision> feasibleVisions(List<Vision> visions) {
+        return visions.stream()
+                .filter(vision -> vision.getDistance() < CapoRobotConstants.MAX_VISION_DISTANCE)
+                .collect(Collectors.toList());
+
     }
 
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
