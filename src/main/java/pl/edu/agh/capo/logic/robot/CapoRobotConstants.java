@@ -18,13 +18,12 @@ public class CapoRobotConstants {
     //Estimation
     public static final double NEIGHBOURHOOD_SCOPE = 0.3;
 
-    //Kernel Hough Transforamtion
+    //Hough Transforamtion
     public static final long KHT_CLUSTER_MIN_SIZE = 5;
     public static final double KHT_CLUSTER_MIN_DEVIATION = 1.0;
     public static final double KHT_DELTA = 0.5;
     public static final double KHT_KERNEL_MIN_HEIGHT = 0.002;
     public static final double KHT_N_SIGMAS = 2.0;
-
     public static final int HOUGH_MAX_LINES_COUNT = 6;
     public static final int HOUGH_THRESHOLD = 8;
 }

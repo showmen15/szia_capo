@@ -28,8 +28,8 @@ public class KernelBasedHoughTransform implements HoughTransform {
         visionImage = new VisionImage(feasibleVisions(measure.getVisions()), CapoRobotConstants.VISION_IMAGE_SIZE);
         try {
             lines = new JniKernelHough().kht(visionImage.toByteArray(),
-                    CapoRobotConstants.VISION_IMAGE_SIZE,
-                    CapoRobotConstants.VISION_IMAGE_SIZE,
+                    visionImage.getSize(),
+                    visionImage.getSize(),
                     CapoRobotConstants.KHT_CLUSTER_MIN_SIZE,
                     CapoRobotConstants.KHT_CLUSTER_MIN_DEVIATION,
                     CapoRobotConstants.KHT_DELTA,
@@ -39,8 +39,9 @@ public class KernelBasedHoughTransform implements HoughTransform {
             if (lines.size() > max) {
                 lines = lines.subList(0, max);
             }
-            /*visionImage.writeToFile("vision.bmp");
+   /*         visionImage.writeToFile("vision.bmp");
             visionImage.writeToFileWithLines("vision-with-lines.bmp", getLines());*/
+            //ystem.exit(1);
         } catch (IOException e) {
             logger.error("Could not extraxt lines", e);
         }

@@ -2,6 +2,7 @@ package pl.edu.agh.capo.hough.jni;
 
 import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -18,14 +19,20 @@ public class VisionImage {
     private final int size;
     private final int halfSize;
 
-    public VisionImage(List<Vision> visions, int size) {
-        this.bytes = new byte[size * size];
-        this.size = size;
+    public VisionImage(List<Vision> visions, int maxSize) {
+        Vision vision = visions.stream().max((v1, v2) -> Double.compare(v1.getDistance(), v2.getDistance())).get();
+        double maxDistance = vision.getDistance();
+        this.size = (int) (maxSize * maxDistance / CapoRobotConstants.MAX_VISION_DISTANCE);
         this.halfSize = size / 2;
+        this.bytes = new byte[size * size];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = 0;
         }
-        addVisions(visions);
+        addVisions(visions, maxDistance);
+    }
+
+    public int getSize() {
+        return size;
     }
 
     private static int grayScale(int rgb) {
@@ -36,9 +43,7 @@ public class VisionImage {
         return (rgb & 0xFF000000) | (cmax << 16) | (cmax << 8) | cmax;
     }
 
-    private void addVisions(List<Vision> visions) {
-        Vision vision = visions.stream().max((v1, v2) -> Double.compare(v1.getDistance(), v2.getDistance())).get();
-        double maxDistance = vision.getDistance();
+    private void addVisions(List<Vision> visions, double maxDistance) {
         visions.forEach(v -> addPoint(v, maxDistance));
     }
 
