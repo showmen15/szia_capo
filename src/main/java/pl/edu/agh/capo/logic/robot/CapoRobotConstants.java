@@ -15,6 +15,9 @@ public class CapoRobotConstants {
     public static final int VISION_IMAGE_SIZE = 250;
     public final static double VISION_ACCURACY = 0.2; //m
 
+    //Estimation
+    public static final double NEIGHBOURHOOD_SCOPE = 0.3;
+
     //Kernel Hough Transforamtion
     public static final long KHT_CLUSTER_MIN_SIZE = 5;
     public static final double KHT_CLUSTER_MIN_DEVIATION = 1.0;

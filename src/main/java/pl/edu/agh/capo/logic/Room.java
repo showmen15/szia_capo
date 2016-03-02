@@ -1,6 +1,7 @@
 package pl.edu.agh.capo.logic;
 
 import pl.edu.agh.capo.logic.common.Location;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
 import pl.edu.agh.capo.maze.Wall;
@@ -12,8 +13,6 @@ import java.util.Map;
 import java.util.Random;
 
 public class Room {
-
-    private static final int NEIGHBOURHOOD_FACTOR = 6;
 
     private final List<Wall> walls;
     private final List<Gate> gates;
@@ -28,12 +27,9 @@ public class Room {
     private final List<Gate> westGates;
     private final List<Gate> eastGates;
 
-    private final double neighbourhoodX;
-    private final double neighbourhoodY;
-
     private final String spaceId;
 
-    private final Random random = new Random();
+    private final static Random random = new Random();
     private Map<String, Room> gateRooms;
 
     public Room(List<Wall> walls, List<Gate> gates, String spaceId) {
@@ -50,9 +46,6 @@ public class Room {
         maxY = MazeHelper.getMaxY(walls);
         minX = MazeHelper.getMinX(walls);
         maxX = MazeHelper.getMaxX(walls);
-
-        neighbourhoodX = (maxX - minX) / (2 * NEIGHBOURHOOD_FACTOR);
-        neighbourhoodY = (maxY - minY) / (2 * NEIGHBOURHOOD_FACTOR);
 
         splitGates();
     }
@@ -128,17 +121,43 @@ public class Room {
     }
 
     public Coordinates getRandomPositionInNeighbourhoodOf(Location location) {
-        double minX = location.positionX - neighbourhoodX;
-        double maxX = location.positionX + neighbourhoodX;
-        double minY = location.positionY - neighbourhoodY;
-        double maxY = location.positionY + neighbourhoodY;
-        return getRandom(Math.max(minX, this.minX), Math.min(maxX, this.maxX), Math.max(minY, this.minY), Math.min(maxY, this.maxY));
+        return getRandomWithGaussianDistribution(location);
+    }
+
+    private Coordinates getRandomWithGaussianDistribution(Location location) {
+        double x = triangularDistributionOfCoordinate(location.positionX, minX, maxX);
+        double y = triangularDistributionOfCoordinate(location.positionY, minY, maxY);
+        return createCoordinates(x, y);
+    }
+
+    private double triangularDistributionOfCoordinate(double coordinate, double min, double max) {
+        double minCoordinate = coordinate - CapoRobotConstants.NEIGHBOURHOOD_SCOPE;
+        double maxCoordinate = coordinate + CapoRobotConstants.NEIGHBOURHOOD_SCOPE;
+
+        double left = Math.max(minCoordinate, min);
+        double right = Math.min(maxCoordinate, max);
+
+        return triangularDistribution(left, right, coordinate);
+    }
+
+    private double triangularDistribution(double left, double right, double middle) {
+        double F = (middle - left) / (right - left);
+        double rand = Math.random();
+        if (rand < F) {
+            return left + Math.sqrt(rand * (right - left) * (middle - left));
+        } else {
+            return right - Math.sqrt((1 - rand) * (right - left) * (right - middle));
+        }
     }
 
     private Coordinates getRandom(double minX, double maxX, double minY, double maxY) {
-        Coordinates coordinates = new Coordinates();
         double x = random.nextDouble() * (maxX - minX) + minX;
         double y = random.nextDouble() * (maxY - minY) + minY;
+        return createCoordinates(x, y);
+    }
+
+    private Coordinates createCoordinates(double x, double y) {
+        Coordinates coordinates = new Coordinates();
         coordinates.setX(x);
         coordinates.setY(y);
         return coordinates;
