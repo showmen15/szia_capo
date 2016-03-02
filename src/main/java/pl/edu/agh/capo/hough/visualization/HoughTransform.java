@@ -71,10 +71,10 @@ public class HoughTransform {
         }
 
         pl.edu.agh.capo.hough.HoughTransform h = new BasicHoughTransform();
-        h.run(measure);
+        h.run(measure, 6, 10);
 
         // get the lines out
-        java.util.List<Line> lines = h.getLines(6, 10);
+        java.util.List<Line> lines = h.getLines();
         System.out.println(lines.size());
 
         // draw the lines back onto the image

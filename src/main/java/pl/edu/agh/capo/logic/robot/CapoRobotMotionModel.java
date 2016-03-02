@@ -104,13 +104,11 @@ public class CapoRobotMotionModel {
 
     private boolean accelerationExceedMax(double linearVelocity, double deltaTime) {
         double acceleration = calculateAcceleration(getLinearVelocity(), linearVelocity, deltaTime);
-        //System.out.println("acc = " + acceleration);
         return !isRandom && Math.abs(acceleration) > CapoRobotConstants.MAX_ACCELERATION;
     }
 
     private boolean velocitiesNeedCorrection(double velocityRight, double velocityLeft, double deltaTime) {
         double linearVelocity = getLinearVelocity(velocityLeft, velocityRight);
-        //System.out.println("linear = " + linearVelocity);
         return velocityExceedMax(linearVelocity) || accelerationExceedMax(linearVelocity, deltaTime);
     }
 

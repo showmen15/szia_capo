@@ -24,7 +24,7 @@ public class KernelBasedHoughTransform implements HoughTransform {
 
 
     @Override
-    public void run(Measure measure) {
+    public void run(Measure measure, int threshold, int max) {
         visionImage = new VisionImage(feasibleVisions(measure.getVisions()), CapoRobotConstants.VISION_IMAGE_SIZE);
         try {
             lines = new JniKernelHough().kht(visionImage.toByteArray(),
@@ -35,12 +35,12 @@ public class KernelBasedHoughTransform implements HoughTransform {
                     CapoRobotConstants.KHT_DELTA,
                     CapoRobotConstants.KHT_KERNEL_MIN_HEIGHT,
                     CapoRobotConstants.KHT_N_SIGMAS);
-            //lines = lines.stream().filter(distinctByKey(Line::getTheta)).collect(Collectors.toList());
-            //List<Line> tmp = new ArrayList<>();
-            //lines.forEach(line -> tmp.add(new Line(line.getTheta(), line.getRho())));
-            //lines = tmp;
-            // System.out.println(lines.size());
-            // visionImage.writeToFile("withline.jpg");
+
+            if (lines.size() > max) {
+                lines = lines.subList(0, max);
+            }
+            /*visionImage.writeToFile("vision.bmp");
+            visionImage.writeToFileWithLines("vision-with-lines.bmp", getLines());*/
         } catch (IOException e) {
             logger.error("Could not extraxt lines", e);
         }
@@ -59,11 +59,7 @@ public class KernelBasedHoughTransform implements HoughTransform {
     }
 
     @Override
-    public List<Line> getLines(int threshold, int max) {
-        // return new ArrayList<>();
-        if (lines.size() > max) {
-            return lines.subList(0, max);
-        }
+    public List<Line> getLines() {
         return lines;
     }
 }

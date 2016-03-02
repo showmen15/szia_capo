@@ -24,6 +24,13 @@ public class MeasureFileReader implements Iterator<Measure> {
         try {
             br = new BufferedReader(new FileReader(getClass().getClassLoader().getResource(filePath).getFile()));
             String line;
+/*            line = br.readLine();
+            try {
+                list.add(createMeasure(line));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }*/
+
             while ((line = br.readLine()) != null) {
                 try {
                     list.add(createMeasure(line));

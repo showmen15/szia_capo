@@ -13,6 +13,13 @@ public class Line {
         return theta;
     }
 
+    /**
+     * Hough uses mirrored coordinate system
+     */
+    public double getMirroredTheta() {
+        return 180 - theta;
+    }
+
     public double getRho() {
         return rho;
     }

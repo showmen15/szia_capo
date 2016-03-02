@@ -45,10 +45,11 @@ public class Agent {
         this.visions = measure.getVisionsProbe();
         angles.clear();
         for (Line line : lines) {
-            angles.add(normalizeAlpha(line.getTheta()));
-            angles.add(normalizeAlpha(line.getTheta() + 90.0));
-            angles.add(normalizeAlpha(line.getTheta() + 180.0));
-            angles.add(normalizeAlpha(line.getTheta() + 270.0));
+            double theta = line.getMirroredTheta();
+            angles.add(normalizeAlpha(theta));
+            angles.add(normalizeAlpha(theta + 90));
+            angles.add(normalizeAlpha(theta + 180));
+            angles.add(normalizeAlpha(theta + 270));
         }
 
         if (deltaTimeInMillis > 0) {

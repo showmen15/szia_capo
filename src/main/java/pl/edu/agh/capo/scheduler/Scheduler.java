@@ -3,6 +3,7 @@ package pl.edu.agh.capo.scheduler;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.jni.KernelBasedHoughTransform;
 import pl.edu.agh.capo.logic.Agent;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
@@ -99,7 +100,7 @@ public class Scheduler {
 
         private void updateAgentWithMeasure(Measure measure) {
             if (updateMeasures && measure != null) {
-                currentAgent.setMeasure(measure, houghTransform.getLines(8, 4), millisSinceLastMeasure);
+                currentAgent.setMeasure(measure, houghTransform.getLines(), millisSinceLastMeasure);
                 //agent.setMeasure(measure, new ArrayList<>());
                 currentAgent.estimateFitness();
             }
@@ -119,7 +120,7 @@ public class Scheduler {
         @Override
         public void run() {
             //long time = System.currentTimeMillis();
-            houghTransform.run(measure);
+            houghTransform.run(measure, CapoRobotConstants.HOUGH_THRESHOLD, CapoRobotConstants.HOUGH_MAX_LINES_COUNT);
 
             divider.getAgentFactorInfos().forEach(this::updateMeasure);
             if (listener != null) {

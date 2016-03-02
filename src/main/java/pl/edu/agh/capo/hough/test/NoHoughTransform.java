@@ -10,12 +10,12 @@ import java.util.List;
 
 public class NoHoughTransform implements HoughTransform {
     @Override
-    public void run(Measure measure) {
+    public void run(Measure measure, int threshold, int max) {
 
     }
 
     @Override
-    public List<Line> getLines(int threshold, int max) {
+    public List<Line> getLines() {
         return new ArrayList<>();
     }
 }

@@ -26,6 +26,8 @@ public class BasicHoughTransform implements HoughTransform {
 
     private int[][] houghValues;
 
+    private List<Line> lines;
+
     public BasicHoughTransform() {
         sinCache = new double[THETA_COUNT];
         cosCache = new double[THETA_COUNT];
@@ -37,8 +39,22 @@ public class BasicHoughTransform implements HoughTransform {
         houghValues = new int[THETA_COUNT][DOUBLE_HOUGH_SIZE];
     }
 
-    public void run(Measure measure) {
+    public void run(Measure measure, int threshold, int max) {
         measure.getVisionsProbe().forEach(this::addPoint);
+        lines = new ArrayList<>();
+        List<Result> results = new ArrayList<>();
+        for (int t = 0; t < THETA_COUNT; t++) {
+            for (int r = 0; r < DOUBLE_HOUGH_SIZE; r++) {
+                Result result = new Result(t, r, houghValues[t][r]);
+                results.add(result);
+            }
+        }
+        Collections.sort(results, (e1, e2) -> Integer.compare(e2.count, e1.count));
+
+        while (results.get(0).count >= threshold && lines.size() < max) {
+            lines.add(results.remove(0).toLine());
+        }
+        houghValues = new int[THETA_COUNT][DOUBLE_HOUGH_SIZE];
     }
 
     public void addPoint(Vision vision) {
@@ -59,21 +75,7 @@ public class BasicHoughTransform implements HoughTransform {
         }
     }
 
-    public List<Line> getLines(int threshold, int max) {
-        List<Result> results = new ArrayList<>();
-        for (int t = 0; t < THETA_COUNT; t++) {
-            for (int r = 0; r < DOUBLE_HOUGH_SIZE; r++) {
-                Result result = new Result(t, r, houghValues[t][r]);
-                results.add(result);
-            }
-        }
-        List<Line> lines = new ArrayList<>();
-        Collections.sort(results, (e1, e2) -> Integer.compare(e2.count, e1.count));
-
-        while (results.get(0).count >= threshold && lines.size() < max) {
-            lines.add(results.remove(0).toLine());
-        }
-        houghValues = new int[THETA_COUNT][DOUBLE_HOUGH_SIZE];
+    public List<Line> getLines() {
         return lines;
     }
 

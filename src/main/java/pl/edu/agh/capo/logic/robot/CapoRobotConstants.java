@@ -5,7 +5,7 @@ public class CapoRobotConstants {
 
     //Motion model
     public static final double MAX_LINEAR_VELOCITY = 5;//  //m/s
-    public static final double MAX_ACCELERATION = 1; // m/s^2
+    public static final double MAX_ACCELERATION = 2; // m/s^2
     public static final double INTERVAL_TIME_IN_SECONDS = 0.2; //INTERVAL_TIME/ 1000; //created for setting flexibility
     public static final double MAX_INTERVAL_DISTANCE = MAX_LINEAR_VELOCITY * INTERVAL_TIME_IN_SECONDS;
     public static final double WHEELS_HALF_DISTANCE = 0.14;
@@ -25,4 +25,6 @@ public class CapoRobotConstants {
     public static final double KHT_KERNEL_MIN_HEIGHT = 0.002;
     public static final double KHT_N_SIGMAS = 2.0;
 
+    public static final int HOUGH_MAX_LINES_COUNT = 6;
+    public static final int HOUGH_THRESHOLD = 8;
 }
