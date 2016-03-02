@@ -4,6 +4,7 @@ import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import java.util.List;
 public class VisionImage {
 
 
-    private static final int VISION_PER_PIXEL = (int) (255.0 / 3);
+    private static final byte VISION_PER_PIXEL = 1;
     private final byte[] bytes;
     private final int size;
     private final int halfSize;
@@ -25,6 +26,14 @@ public class VisionImage {
             bytes[i] = 0;
         }
         addVisions(visions);
+    }
+
+    private static int grayScale(int rgb) {
+        int r = rgb >> 16 & 0xff;
+        int g = rgb >> 8 & 0xff;
+        int b = rgb & 0xff;
+        int cmax = Math.max(Math.max(r, g), b);
+        return (rgb & 0xFF000000) | (cmax << 16) | (cmax << 8) | cmax;
     }
 
     private void addVisions(List<Vision> visions) {
@@ -42,7 +51,7 @@ public class VisionImage {
     private void addPoint(double distance, double angleInRadians) {
         int x = (int) (halfSize + (Math.sin(angleInRadians) * distance));
         int y = (int) (halfSize - (Math.cos(angleInRadians) * distance));
-        bytes[y * size + x] += VISION_PER_PIXEL;
+        bytes[y * size + x] = VISION_PER_PIXEL;
     }
 
     public byte[] toByteArray() throws IOException {
@@ -68,32 +77,31 @@ public class VisionImage {
     private void drawBytes(BufferedImage pixelImage) {
         for (int x = 0; x < size; x++) {
             for (int y = 0; y < size; y++) {
-                byte b = bytes[y * size + x];
-                pixelImage.setRGB(x, y, b);
+                int b = bytes[y * size + x];
+                if (b > 0) {
+                    pixelImage.setRGB(x, y, grayScale(Color.WHITE.getRGB()));
+                }
             }
         }
     }
 
     private void drawLines(BufferedImage bufferedImage, List<Line> lines) {
-        lines.forEach(line -> drawLine(bufferedImage, line, 255));
+        lines.forEach(line -> drawLine(bufferedImage, line, grayScale(Color.DARK_GRAY.getRGB())));
     }
 
     private void drawRobot(BufferedImage bufferedImage) {
-        bufferedImage.setRGB(halfSize, halfSize, 255);
+        bufferedImage.setRGB(halfSize, halfSize, grayScale(Color.WHITE.getRGB()));
     }
 
     @SuppressWarnings("unused")
     public void writeToFileWithLines(String filename, List<Line> lines) throws IOException {
         BufferedImage pixelImage = createImage();
+        drawLines(pixelImage, lines);
         drawBytes(pixelImage);
         drawRobot(pixelImage);
-        drawLines(pixelImage, lines);
         saveImage(pixelImage, filename);
     }
 
-    /**
-     * Draws the line on the image of your choice with the RGB colour of your choice.
-     */
     public void drawLine(BufferedImage image, Line line, int color) {
         double theta = Math.toRadians(line.getTheta());
         double rho = line.getRho();
