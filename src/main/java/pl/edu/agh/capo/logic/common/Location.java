@@ -1,6 +1,7 @@
 package pl.edu.agh.capo.logic.common;
 
 import com.vividsolutions.jts.math.Vector2D;
+import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.Coordinates;
 
 import java.io.Serializable;
@@ -35,6 +36,11 @@ public class Location implements Serializable {
         coordinates.setX(positionX);
         coordinates.setY(positionY);
         return coordinates;
+    }
+
+    public boolean inNeighbourhoodOf(Location location) {
+        return (Math.abs(location.positionX - positionX) < CapoRobotConstants.NEIGHBOURHOOD_SCOPE &&
+                Math.abs(location.positionY - positionY) < CapoRobotConstants.NEIGHBOURHOOD_SCOPE);
     }
 
     @Override

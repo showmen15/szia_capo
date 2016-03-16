@@ -229,7 +229,9 @@ public abstract class TimeDivider {
         protected abstract double estimatedFactor();
 
         public boolean followsSameHyphotesis(AgentFactorInfo agentFactorInfo) {
-            return !equals(agentFactorInfo) && getAgent().getLocation().equals(agentFactorInfo.getAgent().getLocation());
+            return !equals(agentFactorInfo) && getAgent().getLocation().inNeighbourhoodOf(agentFactorInfo.getAgent().getLocation());
         }
+
+
     }
 }
