@@ -119,15 +119,15 @@ public class Scheduler {
 
         @Override
         public void run() {
-            //long time = System.currentTimeMillis();
+            //  long time = System.currentTimeMillis();
             houghTransform.run(measure, CapoRobotConstants.HOUGH_THRESHOLD, CapoRobotConstants.HOUGH_MAX_LINES_COUNT);
 
             divider.getAgentFactorInfos().forEach(this::updateMeasure);
             if (listener != null) {
                 new Thread(listener::onUpdate).start();
             }
-            //long end = System.currentTimeMillis();
-            //System.out.println("took: " + (end - time));
+            //     long end = System.currentTimeMillis();
+            //    System.out.println("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
         }
 
         private void checkTime() throws TimeoutException {

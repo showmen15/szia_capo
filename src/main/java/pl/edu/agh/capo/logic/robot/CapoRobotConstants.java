@@ -17,6 +17,7 @@ public class CapoRobotConstants {
 
     //Estimation
     public static final double NEIGHBOURHOOD_SCOPE = 0.3;
+    public static final double PERPENDICULARITY_ACCURANCY = 5;  // in degrees
 
     //Hough Transforamtion
     public static final long KHT_CLUSTER_MIN_SIZE = 5;

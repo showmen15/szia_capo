@@ -25,6 +25,7 @@ public class Agent {
     private boolean isTheBest;
 
     private Queue<Double> fitnesses = new LinkedList<>();
+    private Set<Location> locations = new HashSet<>();
 
     public Agent(Room room) {
         this.room = room;
@@ -44,12 +45,15 @@ public class Agent {
     public void setMeasure(Measure measure, List<Line> lines, double deltaTimeInMillis) {
         this.visions = measure.getVisionsProbe();
         angles.clear();
+        locations.clear();
+        int index = 0;
         for (Line line : lines) {
-            double theta = line.getMirroredTheta();
+            double theta = line.getTheta();
             angles.add(normalizeAlpha(theta));
             angles.add(normalizeAlpha(theta + 90));
             angles.add(normalizeAlpha(theta + 180));
             angles.add(normalizeAlpha(theta + 270));
+            prepareLocations(lines, line, ++index);
         }
 
         if (deltaTimeInMillis > 0) {
@@ -142,6 +146,10 @@ public class Agent {
         return motionModel.getLocation();
     }
 
+    public void setLocation(Location location) {
+        motionModel.applyLocation(location);
+    }
+
     private double normalizeAlpha(double alpha) {
         while (alpha < -180.0) {
             alpha += 360.0;
@@ -232,12 +240,73 @@ public class Agent {
     }
 
     public void estimateRandom() {
-        Coordinates coords = findRandomCoordinates();
-        if (angles.size() == 0) {
-            double angle = random.nextDouble() * 360 - 180;
-            tryAndChangePositionIfBetterEstimation(coords, angle);
+        if (locations.size() > 0) {
+            Location location = locations.stream().findAny().get();
+            locations.remove(location);
+            //double fitness = getFitness();
+            tryAndChangePositionIfBetterEstimation(location.getCoordinates(), location.alpha);
+/*            if (fitness != getFitness() && getFitness() > 0.7) {
+                System.out.println("Changed**************************************************************************");
+            }*/
         } else {
-            updateAlphaWithVisionAngles(coords);
+            Coordinates coords = findRandomCoordinates();
+            if (angles.size() == 0) {
+                double angle = random.nextDouble() * 360 - 180;
+                tryAndChangePositionIfBetterEstimation(coords, angle);
+            } else {
+                updateAlphaWithVisionAngles(coords);
+            }
+        }
+    }
+
+    private void prepareLocations(List<Line> lines, Line next, int index) {
+        for (int i = index; i < lines.size(); i++) {
+            Line line = lines.get(i);
+            if (line.isPerpendicularTo(next)) {
+                if (line.getTheta() < next.getTheta()) {
+                    addCornerLocations(next, line);
+                } else {
+                    addCornerLocations(line, next);
+                }
+            }
+        }
+    }
+
+    private void addCornerLocations(Line left, Line right) {
+        double theta = right.getTheta();
+        //int size = locations.size();
+        addCornerLocations(left, right, theta);
+        //System.out.println("THETA: " + (locations.size() - size));
+
+        //size = locations.size();
+        addCornerLocations(left, right, theta + 90);
+/*        if(locations.size() - size > 0) {
+            System.out.println(left.getTheta() - right.getTheta());
+        }*/
+        //System.out.println("THETA + 90: " + (locations.size() - size));
+
+        //size = locations.size();
+        addCornerLocations(left, right, theta + 180);
+        //System.out.println("THETA + 180: " + (locations.size() - size));
+
+        //size = locations.size();
+        addCornerLocations(left, right, theta - 90);
+/*        if(locations.size() - size > 0) {
+            System.out.println(left.getTheta() - right.getTheta());
+        }*/
+        //System.out.println("THETA + -90: " + (locations.size() -size));
+    }
+
+    private void addCornerLocations(Line left, Line right, double angle) {
+        addLocation(new Location(room.getMaxX() - right.getRho(), room.getMinY() + left.getRho(), normalizeAlpha(angle)));
+        addLocation(new Location(room.getMaxX() - left.getRho(), room.getMaxY() - right.getRho(), normalizeAlpha(angle)));
+        addLocation(new Location(room.getMinX() + right.getRho(), room.getMaxY() - left.getRho(), normalizeAlpha(angle)));
+        addLocation(new Location(room.getMinX() + left.getRho(), room.getMinY() + right.getRho(), normalizeAlpha(angle)));
+    }
+
+    private void addLocation(Location location) {
+        if (room.coordinatesMatches(location.positionX, location.positionY)) {
+            locations.add(location);
         }
     }
 
@@ -288,10 +357,6 @@ public class Agent {
 
     public double getEnergy() {
         return fitnesses.size() > 0 ? energySum / fitnesses.size() : 0.0;
-    }
-
-    public void setLocation(Location location) {
-        motionModel.applyLocation(location);
     }
 
     @Override

@@ -18,17 +18,18 @@ public class VisionImage {
     private final byte[] bytes;
     private final int size;
     private final int halfSize;
+    private final double maxDistance;
 
     public VisionImage(List<Vision> visions, int maxSize) {
         Vision vision = visions.stream().max((v1, v2) -> Double.compare(v1.getDistance(), v2.getDistance())).get();
-        double maxDistance = vision.getDistance();
+        this.maxDistance = vision.getDistance();
         this.size = (int) (maxSize * maxDistance / CapoRobotConstants.MAX_VISION_DISTANCE);
         this.halfSize = size / 2;
         this.bytes = new byte[size * size];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = 0;
         }
-        addVisions(visions, maxDistance);
+        addVisions(visions);
     }
 
     public int getSize() {
@@ -43,11 +44,11 @@ public class VisionImage {
         return (rgb & 0xFF000000) | (cmax << 16) | (cmax << 8) | cmax;
     }
 
-    private void addVisions(List<Vision> visions, double maxDistance) {
-        visions.forEach(v -> addPoint(v, maxDistance));
+    private void addVisions(List<Vision> visions) {
+        visions.forEach(this::addPoint);
     }
 
-    private void addPoint(Vision vision, double maxDistance) {
+    private void addPoint(Vision vision) {
         double distance = vision.getDistance() / maxDistance * (halfSize - 1); // distance <- [0,1)
         double angleInRadians = Math.toRadians(vision.getAngle());
         addPoint(distance, angleInRadians);
@@ -57,6 +58,33 @@ public class VisionImage {
         int x = (int) (halfSize + (Math.sin(angleInRadians) * distance));
         int y = (int) (halfSize - (Math.cos(angleInRadians) * distance));
         bytes[y * size + x] = VISION_PER_PIXEL;
+    }
+
+    public void translateLines(List<Line> lines) {
+        lines.forEach(this::translateLine);
+    }
+
+    private void translateLine(Line line) {
+        double rho = line.getRawRho() * maxDistance / (halfSize - 1);
+        double theta = 180 - line.getRawTheta();
+        if (rho > 0) {
+            theta += 90;
+        } else {
+            theta -= 90;
+            rho -= rho;
+        }
+        line.setTheta(normalizeAlpha((theta)));
+        line.setRho(rho);
+    }
+
+    private double normalizeAlpha(double alpha) {
+        while (alpha < -180.0) {
+            alpha += 360.0;
+        }
+        while (alpha > 180.0) {
+            alpha -= 360.0;
+        }
+        return alpha;
     }
 
     public byte[] toByteArray() throws IOException {
@@ -91,7 +119,7 @@ public class VisionImage {
     }
 
     private void drawLines(BufferedImage bufferedImage, List<Line> lines) {
-        lines.forEach(line -> drawLine(bufferedImage, line, grayScale(Color.DARK_GRAY.getRGB())));
+        lines.forEach(line -> drawLine(bufferedImage, line, grayScale(Color.GRAY.getRGB())));
     }
 
     private void drawRobot(BufferedImage bufferedImage) {
@@ -108,8 +136,8 @@ public class VisionImage {
     }
 
     public void drawLine(BufferedImage image, Line line, int color) {
-        double theta = Math.toRadians(line.getTheta());
-        double rho = line.getRho();
+        double theta = Math.toRadians(line.getRawTheta());
+        double rho = line.getRawRho();
 
         // Find edge points and vote in array
         float centerX = halfSize;

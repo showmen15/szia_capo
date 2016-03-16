@@ -39,9 +39,15 @@ public class KernelBasedHoughTransform implements HoughTransform {
             if (lines.size() > max) {
                 lines = lines.subList(0, max);
             }
-   /*         visionImage.writeToFile("vision.bmp");
-            visionImage.writeToFileWithLines("vision-with-lines.bmp", getLines());*/
-            //ystem.exit(1);
+
+            //visionImage.writeToFileWithLines("vision-with-lines.bmp", getLines());
+            //visionImage.writeToFile("vision.bmp");
+
+            visionImage.translateLines(lines);
+
+            //if (lines.get(0).getRawRho() >0 && lines.get(0).getRawTheta() > 90) {
+            //System.exit(1);
+            //}
         } catch (IOException e) {
             logger.error("Could not extraxt lines", e);
         }
