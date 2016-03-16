@@ -1,7 +1,7 @@
 package pl.edu.agh.capo.logic.robot;
 
 public class CapoRobotConstants {
-    public static final int INTERVAL_TIME = 20;      //200 ms
+    public static final int INTERVAL_TIME = 8;      //200 ms
 
     //Motion model
     public static final double MAX_LINEAR_VELOCITY = 5;//  //m/s
@@ -12,7 +12,7 @@ public class CapoRobotConstants {
 
     //Vision model
     public static final double MAX_VISION_DISTANCE = 5.0; //m
-    public static final int VISION_IMAGE_SIZE = 250;
+    public static final int VISION_IMAGE_SIZE = 350;
     public final static double VISION_ACCURACY = 0.2; //m
 
     //Estimation
@@ -20,8 +20,8 @@ public class CapoRobotConstants {
     public static final double PERPENDICULARITY_ACCURANCY = 5;  // in degrees
 
     //Hough Transforamtion
-    public static final long KHT_CLUSTER_MIN_SIZE = 5;
-    public static final double KHT_CLUSTER_MIN_DEVIATION = 1.0;
+    public static final long KHT_CLUSTER_MIN_SIZE = 10;
+    public static final double KHT_CLUSTER_MIN_DEVIATION = 2.0;
     public static final double KHT_DELTA = 0.5;
     public static final double KHT_KERNEL_MIN_HEIGHT = 0.002;
     public static final double KHT_N_SIGMAS = 2.0;
