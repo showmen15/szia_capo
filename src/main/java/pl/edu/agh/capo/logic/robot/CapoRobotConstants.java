@@ -1,7 +1,7 @@
 package pl.edu.agh.capo.logic.robot;
 
 public class CapoRobotConstants {
-    public static final int INTERVAL_TIME = 8;      //200 ms
+    public static final int INTERVAL_TIME = 20;      //200 ms
 
     //Motion model
     public static final double MAX_LINEAR_VELOCITY = 5;//  //m/s

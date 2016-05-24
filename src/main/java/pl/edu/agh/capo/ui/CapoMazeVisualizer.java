@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.scheduler.Scheduler;
+import pl.edu.agh.capo.statistics.IStatisticsPrinter;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -34,13 +35,13 @@ public class CapoMazeVisualizer extends JFrame {
         return instance;
     }
 
-    public void open(Scheduler scheduler) {
+    public void open(Scheduler scheduler, IStatisticsPrinter statisticsPrinter) {
         setJMenuBar(createMenuBar());
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         mazePanel = new MazePanel();
-        infoPanel = new InfoPanel(mazePanel, scheduler);
+        infoPanel = new InfoPanel(mazePanel, scheduler, statisticsPrinter);
         setContentPane(createSplitPanel());
         setSize(FRAME_SIZE);
         setVisible(true);

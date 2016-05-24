@@ -71,7 +71,7 @@ public class VisionImage {
             theta += 90;
         } else {
             theta -= 90;
-            rho -= rho;
+            rho = -rho;
         }
         line.setTheta(normalizeAlpha((theta)));
         line.setRho(rho);

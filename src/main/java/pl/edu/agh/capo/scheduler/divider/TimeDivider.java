@@ -2,8 +2,7 @@ package pl.edu.agh.capo.scheduler.divider;
 
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.Room;
-import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
-import pl.edu.agh.capo.maze.Coordinates;
+import pl.edu.agh.capo.statistics.IStatisticsPrinter;
 
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -18,23 +17,18 @@ public abstract class TimeDivider {
     private final List<Room> rooms;
     private final List<Agent> agents = new CopyOnWriteArrayList<>();
     private final List<AgentFactorInfo> agentFactorInfos = new LinkedList<>();
+    private final IStatisticsPrinter statisticsPrinter;
     private int agentCount;
-
     // Current interval
     private int[] currentIntervalTimes;
     private double intervalFactorSum;
+    private boolean newInterval;
 
-    //Statistics
-    private double factorMedium = 0.0;
-    private double bestFactorMedium = 0.0;
-    private long intervalCount = 0;
-    private Coordinates bestCoordinates;
-    private int jumpsCount;
-
-    public TimeDivider(List<Room> rooms, int agentCount, int intervalTime) {
+    public TimeDivider(List<Room> rooms, int agentCount, int intervalTime, IStatisticsPrinter statisticsPrinter) {
         this.rooms = rooms;
         this.agentCount = agentCount;
         this.intervalTime = intervalTime;
+        this.statisticsPrinter = statisticsPrinter;
         reinitializeCurrentIntervalTimes();
     }
 
@@ -43,12 +37,8 @@ public abstract class TimeDivider {
     }
 
     public void printAndResetStatistics() {
-        System.out.println(Double.toString(factorMedium).replace('.', ',') + "\t" + Double.toString(bestFactorMedium).replace('.', ',') +
-                "\t" + jumpsCount + "\t" + agentCount);
-        factorMedium = 0.0;
-        intervalCount = 0;
-        bestFactorMedium = 0.0;
-        jumpsCount = 0;
+        statisticsPrinter.printAndReset();
+        newInterval = true;
     }
 
     protected abstract AgentFactorInfo createAgentInfo(int index, Agent agent);
@@ -74,6 +64,7 @@ public abstract class TimeDivider {
         updateIndexes();
         intervalFactorSum = 0.0;
         agentFactorInfos.forEach(this::updateFactor);
+        newInterval = false;
     }
 
     protected void addAgentInEmptyRooms() {
@@ -122,29 +113,7 @@ public abstract class TimeDivider {
         } else {
             agentFactorInfos.forEach(i -> setTime(i, intervalTime / agentCount));
         }
-        updateStatistics();
-    }
-
-    private void updateStatistics() {
-        intervalCount++;
-        double intervalFactorMedium = intervalFactorSum / agentCount;
-        factorMedium += (intervalFactorMedium - factorMedium) / intervalCount;
-        AgentFactorInfo best = getTheBest();
-        bestFactorMedium += (best.getFactor() - bestFactorMedium) / intervalCount;
-        updateJumps(best.getAgent());
-    }
-
-    private void updateJumps(Agent best) {
-        Coordinates coordinates = best.getLocation().getCoordinates();
-        if (bestCoordinates != null) {
-            double dx = coordinates.getX() - bestCoordinates.getX();
-            double dy = coordinates.getY() - bestCoordinates.getY();
-            double distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance > CapoRobotConstants.MAX_INTERVAL_DISTANCE) {
-                jumpsCount++;
-            }
-        }
-        bestCoordinates = coordinates;
+        statisticsPrinter.update(getTheBest(), intervalFactorSum, agentCount);
     }
 
     private int distributedTimeToStarvingAgents() {
@@ -191,10 +160,9 @@ public abstract class TimeDivider {
 
     public abstract class AgentFactorInfo {
         private static final int MAX_SLEPT_ITERATIONS = 5;
-
-        private int index;
         private final Agent agent;
         protected double factor;
+        private int index;
         private int sleptIterations = MAX_SLEPT_ITERATIONS;
 
         public AgentFactorInfo(int index, Agent agent) {
@@ -210,7 +178,7 @@ public abstract class TimeDivider {
             return index;
         }
 
-        private double getFactor() {
+        public double getFactor() {
             return factor;
         }
 
@@ -223,8 +191,13 @@ public abstract class TimeDivider {
         }
 
         private void updateFactor() {
+            if (newInterval) {
+                resetFactor();
+            }
             this.factor = estimatedFactor();
         }
+
+        protected abstract void resetFactor();
 
         protected abstract double estimatedFactor();
 

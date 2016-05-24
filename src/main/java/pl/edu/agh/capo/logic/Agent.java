@@ -20,7 +20,6 @@ public class Agent {
     private List<Vision> visions = new ArrayList<>();
     private List<Double> angles = new CopyOnWriteArrayList<>();
     private double fitness;
-    private double energySum;
     private Room room;
     private boolean isTheBest;
 
@@ -339,12 +338,23 @@ public class Agent {
         }
     }
 
+    private double energy;
+
     public void recalculateEnergy() {
         fitnesses.add(fitness);
-        energySum += fitness;
         if (fitnesses.size() > FITNESS_QUEUE_MAX_SIZE) {
-            energySum -= fitnesses.poll();
+            fitnesses.poll();
         }
+
+        int i = 0;
+        double sum = 0.0;
+        double sum_i = 0.0;
+        for (Double fitness : fitnesses) {
+            i++;
+            sum_i += i;
+            sum += fitness * i;
+        }
+        energy = sum / sum_i;
         //System.out.println(energy);
     }
 
@@ -356,7 +366,7 @@ public class Agent {
     }
 
     public double getEnergy() {
-        return fitnesses.size() > 0 ? energySum / fitnesses.size() : 0.0;
+        return fitnesses.size() > 0 ? energy : 0.0;
     }
 
     @Override
@@ -364,5 +374,10 @@ public class Agent {
         return "Agent{" +
                 "room=" + room +
                 '}';
+    }
+
+    public void resetEnergy() {
+        fitnesses.clear();
+        energy = 0.0;
     }
 }

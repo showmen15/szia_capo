@@ -43,6 +43,12 @@ public class Location implements Serializable {
                 Math.abs(location.positionY - positionY) < CapoRobotConstants.NEIGHBOURHOOD_SCOPE);
     }
 
+    public double calculateDistanceTo(Location location) {
+        double dx = location.positionX - positionX;
+        double dy = location.positionY - positionY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -71,10 +77,14 @@ public class Location implements Serializable {
 
     @Override
     public String toString() {
-        return "Location{" +
-                "positionX=" + positionX +
-                ", positionY=" + positionY +
-                ", alpha=" + alpha +
-                '}';
+        return positionX + "," + positionY + "," + alpha;
+    }
+
+    public static Location fromString(String line) {
+        String[] attributes = line.split(",");
+        double positionX = Double.parseDouble(attributes[0]);
+        double positionY = Double.parseDouble(attributes[1]);
+        double alpha = Double.parseDouble(attributes[2]);
+        return new Location(positionX, positionY, alpha);
     }
 }

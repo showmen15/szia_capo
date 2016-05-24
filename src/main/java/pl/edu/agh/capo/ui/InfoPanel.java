@@ -11,6 +11,7 @@ import pl.edu.agh.capo.maze.helper.MazeHelper;
 import pl.edu.agh.capo.scheduler.Scheduler;
 import pl.edu.agh.capo.scheduler.divider.EnergyTimeDivider;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
+import pl.edu.agh.capo.statistics.IStatisticsPrinter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,6 +22,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
 
     private final Scheduler scheduler;
     private final MazePanel mazePanel;
+    private final IStatisticsPrinter statisticsPrinter;
 
     private JButton nextAgentButton;
     private JButton prevAgentButton;
@@ -35,10 +37,11 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
     private TimeDivider timeDivider;
 
 
-    public InfoPanel(MazePanel mazePanel, Scheduler scheduler) {
+    public InfoPanel(MazePanel mazePanel, Scheduler scheduler, IStatisticsPrinter statisticsPrinter) {
         super();
         this.mazePanel = mazePanel;
         this.scheduler = scheduler;
+        this.statisticsPrinter = statisticsPrinter;
 
         buildView();
         addKeyListener(new CapoKeyListener(this));
@@ -48,7 +51,7 @@ public class InfoPanel extends JPanel implements IAgentMoveListener {
 
     public void updateAgents(MazeMap map) {
         java.util.List<Room> rooms = MazeHelper.buildRooms(map);
-        timeDivider = new EnergyTimeDivider(rooms, map.getSpaces().size(), CapoRobotConstants.INTERVAL_TIME);
+        timeDivider = new EnergyTimeDivider(rooms, map.getSpaces().size(), CapoRobotConstants.INTERVAL_TIME, statisticsPrinter);
         for (Room room : rooms) {
             Agent agent = new Agent(room);
             timeDivider.addAgent(agent);
