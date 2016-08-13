@@ -1,8 +1,22 @@
-Systemy zdecentralizowane i agentowe - CAPO
-======
+# Systemy zdecentralizowane i agentowe - CAPO
 
-Wizja
-------
+## Instalacja
+
+```
+git clone https://github.com/sylgas/szia_capo.git
+cd szia_capo\lib
+make.exe --file=Makefile.win
+cd ..\
+mvn clean install
+```
+
+## Uruchomienie
+
+```
+java -jar target\szia-capo-1.0-SNAPSHOT.jar
+```
+
+## Wizja
 
 Celem projektu jest stworzenie modułu pozwalającego na określenie lokalizacji robota mobilnego na podstawie odczytów z sensorów. Robot może poruszać się po określonych pomieszczeniach. Jako dane wejściowe będzie przyjmowana lista ścian, przejść oraz pokoi (w formacie JSON). Cyklicznie będą podawane odczyty z sensorów robota (co ok. 200 ms) tj. prędkości kół (prawego i lewego), odległość od przeszkód w polu "widzenia" robota (ok. 240 stopni). Analizowane będą pomiary co 8 stopni. 
 
