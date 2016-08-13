@@ -1,13 +1,16 @@
 package pl.edu.agh.capo.scheduler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 public class MultiThreadedScheduler {
-
     public static final int OPERATION_TIME = 500;
+    private static final Logger logger = LoggerFactory.getLogger(MultiThreadedScheduler.class);
 
     private final int periodTime;
     private final int count;
@@ -44,7 +47,7 @@ public class MultiThreadedScheduler {
     }
 
     private void recalculatePrintersRuntime() {
-        System.out.println("Recalculating...");
+        logger.info("Recalculating...");
         int leftTime = periodTime;
         for (int i = 0; i < count - 1; i++) {
             int time = random.nextInt(count) * OPERATION_TIME;
@@ -84,7 +87,7 @@ public class MultiThreadedScheduler {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println(id);
+                logger.debug(String.valueOf(id));
             }
             startPrinter(id + 1);
         }

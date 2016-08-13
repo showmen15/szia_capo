@@ -2,7 +2,8 @@ package pl.edu.agh.capo.ui;
 
 
 import com.google.gson.Gson;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.scheduler.Scheduler;
 import pl.edu.agh.capo.statistics.IStatisticsPrinter;
@@ -20,7 +21,7 @@ public class CapoMazeVisualizer extends JFrame {
     private static final Dimension FRAME_SIZE = new Dimension(900, 660);
     private static final int SPLIT_DIVIDER_LOCATION = 600;
 
-    private final Logger logger = Logger.getLogger(CapoMazeVisualizer.class);
+    private final Logger logger = LoggerFactory.getLogger(CapoMazeVisualizer.class);
 
     private static final CapoMazeVisualizer instance = new CapoMazeVisualizer();
 

@@ -1,6 +1,7 @@
 package pl.edu.agh.capo.hough.jni;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
@@ -17,11 +18,15 @@ import java.util.stream.Collectors;
 
 public class KernelBasedHoughTransform implements HoughTransform {
 
-    private static final Logger logger = Logger.getLogger(JniKernelHough.class);
+    private static final Logger logger = LoggerFactory.getLogger(JniKernelHough.class);
 
     private VisionImage visionImage;
     private List<Line> lines;
 
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
 
     @Override
     public void run(Measure measure, int threshold, int max) {
@@ -58,11 +63,6 @@ public class KernelBasedHoughTransform implements HoughTransform {
                 .filter(vision -> vision.getDistance() < CapoRobotConstants.MAX_VISION_DISTANCE)
                 .collect(Collectors.toList());
 
-    }
-
-    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
-        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
-        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     @Override

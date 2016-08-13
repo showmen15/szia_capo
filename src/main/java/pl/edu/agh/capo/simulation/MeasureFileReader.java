@@ -1,7 +1,8 @@
 package pl.edu.agh.capo.simulation;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.logic.robot.Measure;
 
@@ -14,7 +15,7 @@ import java.util.*;
 
 public class MeasureFileReader implements Iterator<Measure> {
 
-    private static final Logger logger = Logger.getLogger(MeasureFileReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(MeasureFileReader.class);
 
     private Iterator<Measure> measures;
 

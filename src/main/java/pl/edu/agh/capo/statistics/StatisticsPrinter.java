@@ -1,5 +1,7 @@
 package pl.edu.agh.capo.statistics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.common.Location;
 import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
@@ -12,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class StatisticsPrinter implements IStatisticsPrinter {
+    private static final Logger logger = LoggerFactory.getLogger(StatisticsPrinter.class);
 
     private final InputStream stream;
     //Statistics
@@ -32,7 +35,7 @@ public class StatisticsPrinter implements IStatisticsPrinter {
 
     @Override
     public void printAndReset() {
-        System.out.println(Double.toString(factorMedium).replace('.', ',') + "\t" + Double.toString(bestFactorMedium).replace('.', ',') +
+        logger.info(Double.toString(factorMedium).replace('.', ',') + "\t" + Double.toString(bestFactorMedium).replace('.', ',') +
                 "\t" + jumpsCount + "\t" + agentCount + "\t" + Double.toString(locationErrorSum / intervalCount).replace('.', ',') + "\t" +
                 Double.toString(alphaErrorSum / intervalCount).replace('.', ','));
         try {

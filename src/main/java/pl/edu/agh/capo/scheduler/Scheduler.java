@@ -1,5 +1,7 @@
 package pl.edu.agh.capo.scheduler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.jni.KernelBasedHoughTransform;
 import pl.edu.agh.capo.logic.Agent;
@@ -8,6 +10,7 @@ import pl.edu.agh.capo.logic.robot.Measure;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
 public class Scheduler {
+    private static final Logger logger = LoggerFactory.getLogger(Scheduler.class);
     private UpdateMeasureListener listener;
     private TimeDivider divider;
     private boolean updateMeasures = false;
@@ -127,7 +130,7 @@ public class Scheduler {
                 new Thread(listener::onUpdate).start();
             }
             //     long end = System.currentTimeMillis();
-            //    System.out.println("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
+            //    logger.debug("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
         }
 
         private void checkTime() throws TimeoutException {

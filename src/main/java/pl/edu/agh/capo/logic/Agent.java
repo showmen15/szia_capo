@@ -1,5 +1,7 @@
 package pl.edu.agh.capo.logic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Location;
 import pl.edu.agh.capo.logic.common.Vision;
@@ -13,8 +15,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 public class Agent {
-
     private static final int FITNESS_QUEUE_MAX_SIZE = 10;
+    private static final Logger logger = LoggerFactory.getLogger(Agent.class);
+
     private final Random random = new Random();
     private final CapoRobotMotionModel motionModel;
     private List<Vision> visions = new ArrayList<>();
@@ -78,19 +81,19 @@ public class Agent {
             gate = checkSouthGates(location);
         } else {
             motionModel.applyLocation(location, measure, deltaTimeInMillis);
-            //printIfBEst(measure.toString());
+            //printIfBest(measure.toString());
             return;
         }
         if (gate != null) {
             motionModel.applyLocation(location, measure, deltaTimeInMillis);
             this.room = room.getRoomBehindGate(gate);
-            //rintIfBEst("Changed to " + room.getSpaceId());
+            //printIfBEst("Changed to " + room.getSpaceId());
         }
     }
 
-    private void printIfBEst(String msg) {
+    private void printIfBest(String msg) {
         if (isTheBest) {
-            System.out.println(msg);
+            logger.info(msg);
         }
     }
 
@@ -355,7 +358,6 @@ public class Agent {
             sum += fitness * i;
         }
         energy = sum / sum_i;
-        //System.out.println(energy);
     }
 
     public double estimateFitness() {

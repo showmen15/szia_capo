@@ -1,6 +1,5 @@
 package pl.edu.agh.capo.logic.common;
 
-import com.vividsolutions.jts.math.Vector2D;
 import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.Coordinates;
 
@@ -21,10 +20,6 @@ public class Location implements Serializable {
         this.positionX = coords.getX();
         this.positionY = coords.getY();
         this.alpha = angle;
-    }
-
-    public Vector2D getPositionVector() {
-        return new Vector2D(positionX, positionY);
     }
 
     public double getDistance(Location l) {

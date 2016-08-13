@@ -1,5 +1,7 @@
 package pl.edu.agh.capo.hough.basic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.hough.common.Line;
 import pl.edu.agh.capo.logic.common.Vision;
@@ -13,6 +15,7 @@ public class BasicHoughTransform implements HoughTransform {
     private final static int THETA_COUNT = 180;
     public final static int SIZE = 100;
 
+    private static final Logger logger = LoggerFactory.getLogger(BasicHoughTransform.class);
 
     private final static double THETA_STEP = Math.PI / THETA_COUNT;
     private final static int HALF_SIZE = SIZE / 2;
@@ -68,7 +71,7 @@ public class BasicHoughTransform implements HoughTransform {
             int r = (int) (((x - HALF_SIZE) * cosCache[t]) + ((y - HALF_SIZE) * sinCache[t]));
             r += HOUGH_SIZE;
             if (r < 0 || r >= DOUBLE_HOUGH_SIZE) {
-                System.out.println("Should not happened: r = " + r);
+                logger.error("Incorrect r value, should not happened: r = " + r);
                 continue;
             }
             houghValues[t][r]++;
