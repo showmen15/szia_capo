@@ -1,9 +1,9 @@
 package pl.edu.agh.capo.simulation.files;
 
-import java.io.File;
+import java.io.InputStream;
 
 public interface IMeasureFile {
-    File getMeasures();
+    InputStream getMeasures();
 
-    File getPath();
+    InputStream getPath();
 }

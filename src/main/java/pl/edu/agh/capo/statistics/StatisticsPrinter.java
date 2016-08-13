@@ -6,11 +6,14 @@ import pl.edu.agh.capo.logic.robot.CapoRobotConstants;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.scheduler.divider.TimeDivider;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class StatisticsPrinter implements IStatisticsPrinter {
 
-    private final File file;
+    private final InputStream stream;
     //Statistics
     private double factorMedium = 0.0;
     private double bestFactorMedium = 0.0;
@@ -22,13 +25,9 @@ public class StatisticsPrinter implements IStatisticsPrinter {
     private int agentCount;
     private BufferedReader reader;
 
-    public StatisticsPrinter(File file) {
-        this.file = file;
-        try {
-            reader = new BufferedReader(new FileReader(file));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    public StatisticsPrinter(InputStream stream) {
+        this.stream = stream;
+        reader = new BufferedReader(new InputStreamReader(this.stream));
     }
 
     @Override
@@ -38,7 +37,7 @@ public class StatisticsPrinter implements IStatisticsPrinter {
                 Double.toString(alphaErrorSum / intervalCount).replace('.', ','));
         try {
             reader.close();
-            reader = new BufferedReader(new FileReader(file));
+            reader = new BufferedReader(new InputStreamReader(stream));
         } catch (IOException e) {
             e.printStackTrace();
         }

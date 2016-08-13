@@ -6,9 +6,9 @@ import pl.edu.agh.capo.logic.common.Vision;
 import pl.edu.agh.capo.logic.robot.Measure;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.util.*;
 
@@ -20,10 +20,10 @@ public class MeasureFileReader implements Iterator<Measure> {
 
     private List<Measure> list = new ArrayList<>();
 
-    public MeasureFileReader(File file) {
+    public MeasureFileReader(InputStream stream) {
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new InputStreamReader(stream));
             String line;
 /*            line = br.readLine();
             try {

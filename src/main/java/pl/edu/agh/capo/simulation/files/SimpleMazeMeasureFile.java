@@ -1,21 +1,20 @@
 package pl.edu.agh.capo.simulation.files;
 
-import java.io.File;
+import java.io.InputStream;
 
 public class SimpleMazeMeasureFile implements IMeasureFile {
 
-
     @Override
-    public File getMeasures() {
-        return getFileFromResources("DaneLabirynt3.csv");
+    public InputStream getMeasures() {
+        return getInputStreamFromResources("DaneLabirynt3.csv");
     }
 
     @Override
-    public File getPath() {
-        return getFileFromResources("DaneLabirynt3-pozycje,bezHough.csv");
+    public InputStream getPath() {
+        return getInputStreamFromResources("DaneLabirynt3-pozycje,bezHough.csv");
     }
 
-    private File getFileFromResources(String fileName) {
-        return new File(getClass().getClassLoader().getResource(fileName).getFile());
+    private InputStream getInputStreamFromResources(String fileName) {
+        return getClass().getClassLoader().getResourceAsStream(fileName);
     }
 }
