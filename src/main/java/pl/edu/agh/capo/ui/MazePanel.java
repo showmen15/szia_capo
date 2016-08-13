@@ -57,9 +57,9 @@ public class MazePanel extends JPanel {
         printGates(g2, map.getGates(), Color.cyan);
         printWalls(g2, map.getWalls(), Color.gray);
         printAgent(agent, g2);
-/*        if(agentList != null) {
+        if (agentList != null) {
             agentList.stream().filter(a-> !a.equals(agent)).forEach(a-> printAgent(a, g2));
-        }*/
+        }
         printGates(g2, agent.getRoom().getGates(), Color.blue);
         printWalls(g2, agent.getRoom().getWalls(), Color.black);
         printEtiquettes(g2, agent.getRoom());
