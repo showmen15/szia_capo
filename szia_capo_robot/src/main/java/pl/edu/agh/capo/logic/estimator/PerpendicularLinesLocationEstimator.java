@@ -4,19 +4,22 @@ import pl.edu.agh.capo.common.Line;
 import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.logic.Room;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class PerpendicularLinesLocationEstimator {
     private final Room room;
-    private final Set<Location> locations = new HashSet<>();
+    private CountItemsList<Location> locations = new CountItemsList<>();
 
     public PerpendicularLinesLocationEstimator(Room room) {
         this.room = room;
     }
 
     public void prepareLocations(List<Line> lines, Line next, int index) {
+        if (index == lines.size() - 1) {
+            locations = locations.sortByValue();
+            return;
+        }
         for (int i = index; i < lines.size(); i++) {
             Line line = lines.get(i);
             if (line.isPerpendicularTo(next)) {
@@ -75,5 +78,35 @@ public class PerpendicularLinesLocationEstimator {
         Location location = locations.stream().findAny().get();
         locations.remove(location);
         return location;
+    }
+
+    public class CountItemsList<E> extends ArrayList<E> {
+
+        private Map<E, Integer> count = new HashMap<>();
+
+        public boolean add(E element) {
+            if (!count.containsKey(element)) {
+                count.put(element, 1);
+                return super.add(element);
+            } else {
+                count.put(element, count.get(element) + 1);
+            }
+            return false;
+        }
+
+        @Override
+        public void clear() {
+            super.clear();
+            count.clear();
+        }
+
+        public CountItemsList<E> sortByValue() {
+            CountItemsList<E> result = new CountItemsList<>();
+            Stream<Map.Entry<E, Integer>> st = count.entrySet().stream().filter(e -> e.getValue() > 1);
+
+            st.sorted(Comparator.comparing(Map.Entry::getValue)).forEachOrdered(e -> result.add(0, e.getKey()));
+
+            return result;
+        }
     }
 }
