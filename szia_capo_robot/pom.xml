@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>szia-capo</artifactId>
+        <groupId>pl.edu.agh.capo</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>szia-capo-robot</artifactId>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.alexkasko.maven</groupId>
+                <artifactId>jni-headers-maven-plugin</artifactId>
+                <version>1.0.6</version>
+                <executions>
+                    <!-- generate header for native methods -->
+                    <execution>
+                        <id>javah</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>javah</goal>
+                        </goals>
+                        <configuration>
+                            <javahClass>pl.edu.agh.pl.edu.agh.capo.simulation.hough.jni.JniKernelHough</javahClass>
+                            <javahOutputFilePath>${project.basedir}/lib/kht_source/jni_kernel_hough.h
+                            </javahOutputFilePath>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
