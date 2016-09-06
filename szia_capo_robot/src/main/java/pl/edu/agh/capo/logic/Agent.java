@@ -8,6 +8,7 @@ import pl.edu.agh.capo.logic.estimator.PerpendicularLinesLocationEstimator;
 import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
+import pl.edu.agh.capo.robot.CapoRobotConstants;
 import pl.edu.agh.capo.robot.CapoRobotMotionModel;
 import pl.edu.agh.capo.robot.Measure;
 
@@ -68,15 +69,15 @@ public class Agent {
         this.measure = measure;
         locationEstimator = new PerpendicularLinesLocationEstimator(room);
         fitnessEstimator = buildEstimator();
-        int index = 0;
-        for (Line line : measure.getLines()) {
-            prepareAngles(line);
-            //locationEstimator.prepareLocations(measure, line, ++index);
-        }
+        measure.getLines().forEach(this::prepareAngles);
 
         if (deltaTimeInMillis > 0) {
             applyMotion(measure, deltaTimeInMillis);
         }
+    }
+
+    public void prepareCalculations() {
+        locationEstimator.prepareLocations(measure);
     }
 
     public void prepareAngles(Line line) {
@@ -183,8 +184,7 @@ public class Agent {
         return room;
     }
 
-
-    public void estimateRandom() {
+    public boolean calculate() {
         if (locationEstimator.size() > 0) {
             Location location = locationEstimator.pop();
             //double fitness = getFitness();
@@ -192,27 +192,32 @@ public class Agent {
 /*            if (fitness != getFitness() && getFitness() > 0.7) {
                 System.out.println("Changed**************************************************************************");
             }*/
+            return true;
         } else {
-            Coordinates coords = findRandomCoordinates();
-            if (angles.size() == 0) {
-                double angle = random.nextDouble() * 360 - 180;
-                tryAndChangePositionIfBetterEstimation(coords, angle);
-            } else {
-                updateAlphaWithVisionAngles(coords);
-            }
+            return false;
         }
     }
 
-    private Coordinates findRandomCoordinates() {
-        if (isTheBest) {
-            return room.getRandomPositionInNeighbourhoodOf(getLocation());
+    public void estimateRandom() {
+        estimate(room.getRandomPosition());
+    }
+
+    public void estimateInNeighbourhood() {
+        estimate(room.getRandomPositionInNeighbourhoodOf(getLocation()));
+    }
+
+    private void estimate(Coordinates coordinates) {
+        if (angles.size() == 0) {
+            double angle = random.nextDouble() * 360 - 180;
+            tryAndChangePositionIfBetterEstimation(coordinates, angle);
+        } else {
+            updateAlphaWithVisionAngles(coordinates);
         }
-        return room.getRandomPosition();
     }
 
     private void tryAndChangePositionIfBetterEstimation(Coordinates coords, Double angle) {
-        //TODO: constants
-        double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle, 3, 2);
+        double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle,
+                CapoRobotConstants.ESTIMATION_TRIES, CapoRobotConstants.ESTIMATION_MATCHED_TRIES);
         changePositionIfBetterEstimation(estimated, coords, angle);
     }
 
@@ -274,4 +279,5 @@ public class Agent {
     public Measure getMeasure() {
         return measure;
     }
+
 }

@@ -82,13 +82,39 @@ public class Scheduler {
         }
 
         private void updateMeasure(AbstractTimeDivider.AgentFactorInfo info) {
-            this.currentStartTime = System.currentTimeMillis();
             this.currentAgent = info.getAgent();
-            this.currentTime = times[info.getIndex()];
+            int currentTime = times[info.getIndex()];
             if (currentTime > 0) {
                 updateAgentWithMeasure(measure);
+                double countFactor = CapoRobotConstants.COUNT_TIME_FACTOR_MIN +
+                        CapoRobotConstants.COUNT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
+                int countTime = (int) (countFactor * currentTime);
+                resetTime(countTime);
+                calculateUntilTimeLeft();
+                int timeLeft = (int) (currentTime - (System.currentTimeMillis() - currentStartTime));
+                resetTime(timeLeft);
                 estimateRandomUntilTimeLeft();
             }
+        }
+
+        private void calculateUntilTimeLeft() {
+            try {
+                checkTime();
+                currentAgent.prepareCalculations();
+                while (currentAgent.calculate()) {
+                    checkTime();
+                }
+                while (true) {
+                    currentAgent.estimateInNeighbourhood();
+                    checkTime();
+                }
+            } catch (TimeoutException e) {
+            }
+        }
+
+        private void resetTime(int time) {
+            this.currentTime = time;
+            this.currentStartTime = System.currentTimeMillis();
         }
 
         private void updateAgentWithMeasure(Measure measure) {
@@ -102,12 +128,18 @@ public class Scheduler {
 
         private void estimateRandomUntilTimeLeft() {
             try {
-                checkTime();
                 while (true) {
                     currentAgent.estimateRandom();
                     checkTime();
                 }
             } catch (TimeoutException e) {
+            }
+        }
+
+        private void checkTime() throws TimeoutException {
+            long diff = System.currentTimeMillis() - currentStartTime;
+            if (diff >= currentTime) {
+                throw new TimeoutException();
             }
         }
 
@@ -122,13 +154,6 @@ public class Scheduler {
             }
             //     long end = System.currentTimeMillis();
             //    logger.debug("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
-        }
-
-        private void checkTime() throws TimeoutException {
-            long diff = System.currentTimeMillis() - currentStartTime;
-            if (diff >= currentTime) {
-                throw new TimeoutException();
-            }
         }
 
         private class TimeoutException extends Exception {

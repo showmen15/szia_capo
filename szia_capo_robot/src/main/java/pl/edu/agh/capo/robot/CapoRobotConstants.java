@@ -22,6 +22,12 @@ public class CapoRobotConstants {
     public static final double NEIGHBOURHOOD_SCOPE = 0.3;
     public static final double PERPENDICULARITY_ACCURANCY = 5;  // in degrees
     public static final Class<? extends AbstractFitnessEstimator> FITNESS_ESTIMATOR_CLASS = VisionFitnessEstimator.class;
+    public static final int ESTIMATION_TRIES = 3;
+    public static final int ESTIMATION_MATCHED_TRIES = 2;
+
+    //Hough estimation
+    public static final double HOUGH_ALPHA_ACCURANCY = 5.0;
+    public static final double HOUGH_VISION_ACCURANCY = 0.1;
 
     //Hough Transforamtion
     public static final long KHT_CLUSTER_MIN_SIZE = 10;
@@ -31,6 +37,8 @@ public class CapoRobotConstants {
     public static final double KHT_N_SIGMAS = 2.0;
     public static final int HOUGH_MAX_LINES_COUNT = 6;
     public static final int HOUGH_THRESHOLD = 8;
-    public static final double HOUGH_ALPHA_ACCURANCY = 5.0;
-    public static final double HOUGH_VISION_ACCURANCY = 0.1;
+
+    public static final double COUNT_TIME_FACTOR_MIN = 0.1;
+    public static final double COUNT_TIME_FACTOR_MAX = 0.8;
+    public static final double COUNT_TIME_FACTOR_RANGE_SIZE = COUNT_TIME_FACTOR_MAX - COUNT_TIME_FACTOR_MIN;
 }

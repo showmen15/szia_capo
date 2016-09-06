@@ -16,43 +16,47 @@ public class PerpendicularLinesLocationEstimator {
         this.room = room;
     }
 
-    public void prepareLocations(Measure measure, Line next, int index) {
+    public void prepareLocations(Measure measure) {
+        int index = 0;
         List<Line> lines = measure.getLines();
-        if (index == lines.size() - 1) {
-            locations = locations.sortByValue();
-            return;
-        }
-        for (int i = index; i < lines.size(); i++) {
-            Line line = lines.get(i);
-            if (line.isPerpendicularTo(next)) {
-                if (line.getTheta() < next.getTheta()) {
-                    addCornerLocations(next, line);
-                } else {
-                    addCornerLocations(line, next);
+        for (Line next : lines) {
+            if (index == lines.size() - 1) {
+                locations = locations.sortByValue();
+                return;
+            }
+            for (int i = index; i < lines.size(); i++) {
+                Line line = lines.get(i);
+                if (line.isPerpendicularTo(next)) {
+                    if (line.getTheta() < next.getTheta()) {
+                        addCornerLocations(next, line);
+                    } else {
+                        addCornerLocations(line, next);
+                    }
                 }
             }
+            index++;
         }
     }
 
     private void addCornerLocations(Line left, Line right) {
         double theta = right.getTheta();
         //int size = locations.size();
-        addCornerLocations(left, right, theta);
+        addCornerLocations(left, right, 90 - theta);
         //System.out.println("THETA: " + (locations.size() - size));
 
         //size = locations.size();
-        addCornerLocations(left, right, theta + 90);
+        addCornerLocations(left, right, 180 - theta);
 /*        if(locations.size() - size > 0) {
             System.out.println(left.getTheta() - right.getTheta());
         }*/
         //System.out.println("THETA + 90: " + (locations.size() - size));
 
         //size = locations.size();
-        addCornerLocations(left, right, theta + 180);
+        addCornerLocations(left, right, 270 - theta);
         //System.out.println("THETA + 180: " + (locations.size() - size));
 
         //size = locations.size();
-        addCornerLocations(left, right, theta - 90);
+        addCornerLocations(left, right, -theta);
 /*        if(locations.size() - size > 0) {
             System.out.println(left.getTheta() - right.getTheta());
         }*/
