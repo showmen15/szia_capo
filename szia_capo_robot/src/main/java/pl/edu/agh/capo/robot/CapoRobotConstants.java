@@ -1,7 +1,10 @@
 package pl.edu.agh.capo.robot;
 
+import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
+import pl.edu.agh.capo.logic.fitness.VisionFitnessEstimator;
+
 public class CapoRobotConstants {
-    public static final int INTERVAL_TIME = 100;      //200 ms
+    public static final int INTERVAL_TIME = 20;      //200 ms
 
     //Motion model
     public static final double MAX_LINEAR_VELOCITY = 5;//  //m/s
@@ -18,7 +21,7 @@ public class CapoRobotConstants {
     //Estimation
     public static final double NEIGHBOURHOOD_SCOPE = 0.3;
     public static final double PERPENDICULARITY_ACCURANCY = 5;  // in degrees
-    public static final boolean HOUGH_FITNESS = true;
+    public static final Class<? extends AbstractFitnessEstimator> FITNESS_ESTIMATOR_CLASS = VisionFitnessEstimator.class;
 
     //Hough Transforamtion
     public static final long KHT_CLUSTER_MIN_SIZE = 10;
@@ -28,4 +31,6 @@ public class CapoRobotConstants {
     public static final double KHT_N_SIGMAS = 2.0;
     public static final int HOUGH_MAX_LINES_COUNT = 6;
     public static final int HOUGH_THRESHOLD = 8;
+    public static final double HOUGH_ALPHA_ACCURANCY = 5.0;
+    public static final double HOUGH_VISION_ACCURANCY = 0.1;
 }

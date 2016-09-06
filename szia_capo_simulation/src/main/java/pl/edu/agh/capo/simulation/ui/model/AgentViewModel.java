@@ -5,6 +5,7 @@ import pl.edu.agh.capo.common.Vision;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.Room;
 
+import java.util.Collections;
 import java.util.List;
 
 public class AgentViewModel {
@@ -16,7 +17,7 @@ public class AgentViewModel {
 
     public AgentViewModel(Agent agent, double factor, boolean isHighlighted) {
         this.isHighlighted = isHighlighted;
-        this.visions = agent.getVisions();
+        this.visions = agent.getMeasure() == null ? Collections.emptyList() : agent.getMeasure().getVisions();
         this.room = agent.getRoom();
         this.location = agent.getLocation();
         this.factor = factor;

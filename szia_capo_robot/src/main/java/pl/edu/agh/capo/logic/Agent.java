@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.common.Line;
 import pl.edu.agh.capo.common.Location;
-import pl.edu.agh.capo.common.Vision;
 import pl.edu.agh.capo.logic.estimator.PerpendicularLinesLocationEstimator;
 import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
 import pl.edu.agh.capo.maze.Coordinates;
@@ -14,7 +13,10 @@ import pl.edu.agh.capo.robot.Measure;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
@@ -31,7 +33,7 @@ public class Agent {
     private AbstractFitnessEstimator fitnessEstimator;
 
     private List<Double> angles = new CopyOnWriteArrayList<>();
-    private List<Vision> visions = new ArrayList<>();
+    private Measure measure;
 
     private double fitness;
     private Room room;
@@ -48,8 +50,8 @@ public class Agent {
 
     private AbstractFitnessEstimator buildEstimator() {
         try {
-            Constructor constructor = fitnessEstimatorClass.getDeclaredConstructor(Room.class);
-            return (AbstractFitnessEstimator) constructor.newInstance(room);
+            Constructor constructor = fitnessEstimatorClass.getDeclaredConstructor(Room.class, Measure.class);
+            return (AbstractFitnessEstimator) constructor.newInstance(room, measure);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
             logger.error("Could not initialize FitnessEstimator, counstuctor with Room.class param is required");
             System.exit(-1);
@@ -61,15 +63,15 @@ public class Agent {
         this.isTheBest = isTheBest;
     }
 
-    public void setMeasure(Measure measure, List<Line> lines, double deltaTimeInMillis) {
-        this.visions = measure.getVisionsProbe();
+    public void setMeasure(Measure measure, double deltaTimeInMillis) {
         angles.clear();
+        this.measure = measure;
         locationEstimator = new PerpendicularLinesLocationEstimator(room);
         fitnessEstimator = buildEstimator();
         int index = 0;
-        for (Line line : lines) {
+        for (Line line : measure.getLines()) {
             prepareAngles(line);
-            //locationEstimator.prepareLocations(lines, line, ++index);
+            //locationEstimator.prepareLocations(measure, line, ++index);
         }
 
         if (deltaTimeInMillis > 0) {
@@ -79,10 +81,10 @@ public class Agent {
 
     public void prepareAngles(Line line) {
         double theta = line.getTheta();
-        angles.add(Location.normalizeAlpha(theta));
-        angles.add(Location.normalizeAlpha(theta + 90));
-        angles.add(Location.normalizeAlpha(theta + 180));
-        angles.add(Location.normalizeAlpha(theta + 270));
+        angles.add(Location.normalizeAlpha(90 - theta));
+        angles.add(Location.normalizeAlpha(180 - theta));
+        angles.add(Location.normalizeAlpha(270 - theta));
+        angles.add(Location.normalizeAlpha(-theta));
     }
 
     private synchronized void applyMotion(Measure measure, double deltaTimeInMillis) {
@@ -173,10 +175,6 @@ public class Agent {
         motionModel.applyLocation(location);
     }
 
-    public List<Vision> getVisions() {
-        return visions;
-    }
-
     public double getFitness() {
         return fitness;
     }
@@ -214,7 +212,7 @@ public class Agent {
 
     private void tryAndChangePositionIfBetterEstimation(Coordinates coords, Double angle) {
         //TODO: constants
-        double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle, visions, 3, 2);
+        double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle, 3, 2);
         changePositionIfBetterEstimation(estimated, coords, angle);
     }
 
@@ -253,7 +251,7 @@ public class Agent {
     }
 
     public void estimateFitness() {
-        fitness = fitnessEstimator.estimateFitness(getLocation(), visions);
+        fitness = fitnessEstimator.estimateFitness(getLocation());
         updateAlphaWithVisionAngles(getLocation().getCoordinates());
     }
 
@@ -271,5 +269,9 @@ public class Agent {
     public void resetEnergy() {
         fitnesses.clear();
         energy = 0.0;
+    }
+
+    public Measure getMeasure() {
+        return measure;
     }
 }

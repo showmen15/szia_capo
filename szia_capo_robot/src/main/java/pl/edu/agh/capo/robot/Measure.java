@@ -1,6 +1,7 @@
 package pl.edu.agh.capo.robot;
 
 
+import pl.edu.agh.capo.common.Line;
 import pl.edu.agh.capo.common.Vision;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ public class Measure {
     private final double rightVelocity;
     private final Date datetime;
     private final List<Vision> visions;
+    private List<Line> lines;
 
     public Measure(Date datetime, double rightVelocity, double leftVelocity, List<Vision> visions) {
         this.leftVelocity = milistoMeters(leftVelocity);
@@ -59,5 +61,13 @@ public class Measure {
                 ", datetime=" + datetime +
                 ", visions=" + visions +
                 '}';
+    }
+
+    public void setLines(List<Line> lines) {
+        this.lines = lines;
+    }
+
+    public List<Line> getLines() {
+        return lines;
     }
 }

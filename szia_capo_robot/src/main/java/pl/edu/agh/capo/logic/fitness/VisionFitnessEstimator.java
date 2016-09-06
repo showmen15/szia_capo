@@ -1,26 +1,29 @@
-package pl.edu.agh.capo.simulation.logic.fitness;
+package pl.edu.agh.capo.logic.fitness;
 
+import pl.edu.agh.capo.common.Line;
 import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.common.Vision;
 import pl.edu.agh.capo.logic.Room;
-import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
 import pl.edu.agh.capo.maze.Coordinates;
+import pl.edu.agh.capo.robot.Measure;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class VisionFitnessEstimator extends AbstractFitnessEstimator {
-    private final Room room;
+    protected final Room room;
+    protected final List<Vision> visions;
+    protected final List<Line> lines;
 
-    public VisionFitnessEstimator(Room room) {
+    public VisionFitnessEstimator(Room room, Measure measure) {
         this.room = room;
+        this.visions = measure.getVisionsProbe();
+        this.lines = measure.getLines();
     }
 
     /**
      * estimates fitness of position based on current visions
      */
-    private double estimateFitness(Coordinates coords, Double angle, List<Vision> visions) {
+    protected double estimateFitness(Coordinates coords, Double angle) {
         VisionFitnessAnalyzer analyzer = new VisionFitnessAnalyzer(room, coords.getX(), coords.getY(), angle);
         for (Vision vision : visions) {
             double result = analyzer.estimate(vision.getAngle(), vision.getDistance());
@@ -38,32 +41,20 @@ public class VisionFitnessEstimator extends AbstractFitnessEstimator {
      * @param matches nr of visions that need to check out to continue computation
      */
     @Override
-    public double estimateFitnessByTries(Coordinates coords, Double angle, List<Vision> visions, int tries, int matches) {
+    public double estimateFitnessByTries(Coordinates coords, Double angle, int tries, int matches) {
         if (tries > visions.size()) {
-            return estimateFitness(coords, angle, visions);
+            return estimateFitness(coords, angle);
         }
 
         VisionFitnessAnalyzer analyzer = new VisionFitnessAnalyzer(room, coords.getX(), coords.getY(), angle);
-        Set<Integer> visionTriesIndexes = new HashSet<>();
-        int currMatches = 0;
-
         int step = visions.size() / tries;
-        for (int i = 0; i < visions.size(); i += step) {
-            Vision vision = visions.get(i);
-            double result = analyzer.estimate(vision.getAngle(), vision.getDistance());
-            if (result > 0) {
-                currMatches++;
-            }
-            vision.setFitness(result);
-            visionTriesIndexes.add(i);
-        }
 
-        if (matches > currMatches) {
+        if (matches > countFitnessMatches(analyzer, step)) {
             return -1.0;
         }
 
         for (int i = 0; i < visions.size(); i++) {
-            if (visionTriesIndexes.contains(i)) {
+            if (i % step == 0) {
                 continue;
             }
 
@@ -75,9 +66,22 @@ public class VisionFitnessEstimator extends AbstractFitnessEstimator {
         return countFitness(visions);
     }
 
+    protected int countFitnessMatches(VisionFitnessAnalyzer analyzer, int step) {
+        int currMatches = 0;
+        for (int i = 0; i < visions.size(); i += step) {
+            Vision vision = visions.get(i);
+            double result = analyzer.estimate(vision.getAngle(), vision.getDistance());
+            if (result > 0) {
+                currMatches++;
+            }
+            vision.setFitness(result);
+        }
+        return currMatches;
+    }
+
     @Override
-    public double estimateFitness(Location location, List<Vision> visions) {
-        return estimateFitness(location.getCoordinates(), location.alpha, visions);
+    public double estimateFitness(Location location) {
+        return estimateFitness(location.getCoordinates(), location.alpha);
     }
 
     private double countFitness(List<Vision> visions) {

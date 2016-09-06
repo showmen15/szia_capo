@@ -93,7 +93,8 @@ public class Scheduler {
 
         private void updateAgentWithMeasure(Measure measure) {
             if (measure != null) {
-                currentAgent.setMeasure(measure, houghTransform.getLines(), millisSinceLastMeasure);
+                measure.setLines(houghTransform.getLines());
+                currentAgent.setMeasure(measure, millisSinceLastMeasure);
                 //agent.setMeasure(measure, new ArrayList<>());
                 currentAgent.estimateFitness();
             }

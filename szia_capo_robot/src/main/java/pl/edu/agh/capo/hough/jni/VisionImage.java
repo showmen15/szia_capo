@@ -66,9 +66,13 @@ public class VisionImage {
 
     private void translateLine(Line line) {
         double rho = line.getRawRho() * maxDistance / (halfSize - 1);
-        double theta = 180 - line.getRawTheta();
+        double theta = line.getRawTheta();
         if (rho > 0) {
-            theta += 90;
+            if (theta <= 90) {
+                theta = theta + 90;
+            } else {
+                theta = theta - 270;
+            }
         } else {
             theta -= 90;
             rho = -rho;
@@ -100,7 +104,8 @@ public class VisionImage {
     }
 
     private void saveImage(BufferedImage image, String filename) throws IOException {
-        ImageIO.write(image, "BMP", new File(filename));
+        File file = new File(filename);
+        ImageIO.write(image, "BMP", file);
     }
 
     private BufferedImage createImage() {

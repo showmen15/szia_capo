@@ -3,6 +3,7 @@ package pl.edu.agh.capo.logic.estimator;
 import pl.edu.agh.capo.common.Line;
 import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.logic.Room;
+import pl.edu.agh.capo.robot.Measure;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -15,7 +16,8 @@ public class PerpendicularLinesLocationEstimator {
         this.room = room;
     }
 
-    public void prepareLocations(List<Line> lines, Line next, int index) {
+    public void prepareLocations(Measure measure, Line next, int index) {
+        List<Line> lines = measure.getLines();
         if (index == lines.size() - 1) {
             locations = locations.sortByValue();
             return;

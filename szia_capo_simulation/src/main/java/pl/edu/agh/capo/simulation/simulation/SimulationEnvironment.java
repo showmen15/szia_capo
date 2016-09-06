@@ -7,7 +7,6 @@ import pl.edu.agh.capo.logic.scheduler.divider.AbstractTimeDivider;
 import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
 import pl.edu.agh.capo.robot.CapoRobotConstants;
-import pl.edu.agh.capo.simulation.logic.fitness.VisionFitnessEstimator;
 import pl.edu.agh.capo.simulation.logic.scheduler.divider.StatisticsEnergyTimeDivider;
 import pl.edu.agh.capo.simulation.simulation.files.IMeasureFile;
 import pl.edu.agh.capo.simulation.simulation.files.SimpleMazeMeasureFile;
@@ -37,7 +36,7 @@ public class SimulationEnvironment {
         IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt3.csv", "DaneLabirynt3-pozycje,bezHough.csv");
         IStatisticsPrinter statisticsPrinter = new StatisticsPrinter(measureFile.getIdealPath());
         List<Room> rooms = MazeHelper.buildRooms(map);
-        AbstractTimeDivider timeDivider = new StatisticsEnergyTimeDivider(rooms, VisionFitnessEstimator.class,
+        AbstractTimeDivider timeDivider = new StatisticsEnergyTimeDivider(rooms, CapoRobotConstants.FITNESS_ESTIMATOR_CLASS,
                 CapoRobotConstants.INTERVAL_TIME, statisticsPrinter);
 
         Scheduler scheduler = new Scheduler(timeDivider);

@@ -1,4 +1,4 @@
-package pl.edu.agh.capo.simulation.logic.fitness;
+package pl.edu.agh.capo.logic.fitness;
 
 
 import pl.edu.agh.capo.logic.Room;
