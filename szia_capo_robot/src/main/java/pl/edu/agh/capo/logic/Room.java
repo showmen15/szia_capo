@@ -134,10 +134,11 @@ public class Room {
         double minCoordinate = coordinate - CapoRobotConstants.NEIGHBOURHOOD_SCOPE;
         double maxCoordinate = coordinate + CapoRobotConstants.NEIGHBOURHOOD_SCOPE;
 
-        double left = Math.max(minCoordinate, min);
-        double right = Math.min(maxCoordinate, max);
-
-        return triangularDistribution(left, right, coordinate);
+        double result;
+        do {
+            result = triangularDistribution(minCoordinate, maxCoordinate, coordinate);
+        } while (result > max || result < min);
+        return result;
     }
 
     private double triangularDistribution(double left, double right, double middle) {

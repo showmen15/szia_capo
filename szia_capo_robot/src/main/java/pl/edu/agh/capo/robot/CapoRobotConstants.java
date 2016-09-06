@@ -24,6 +24,9 @@ public class CapoRobotConstants {
     public static final Class<? extends AbstractFitnessEstimator> FITNESS_ESTIMATOR_CLASS = VisionFitnessEstimator.class;
     public static final int ESTIMATION_TRIES = 3;
     public static final int ESTIMATION_MATCHED_TRIES = 2;
+    public static final double COUNT_TIME_FACTOR_MIN = 0.1;
+    public static final double COUNT_TIME_FACTOR_MAX = 0.8;
+    public static final double COUNT_TIME_FACTOR_RANGE_SIZE = COUNT_TIME_FACTOR_MAX - COUNT_TIME_FACTOR_MIN;
 
     //Hough estimation
     public static final double HOUGH_ALPHA_ACCURANCY = 5.0;
@@ -38,7 +41,8 @@ public class CapoRobotConstants {
     public static final int HOUGH_MAX_LINES_COUNT = 6;
     public static final int HOUGH_THRESHOLD = 8;
 
-    public static final double COUNT_TIME_FACTOR_MIN = 0.1;
-    public static final double COUNT_TIME_FACTOR_MAX = 0.8;
-    public static final double COUNT_TIME_FACTOR_RANGE_SIZE = COUNT_TIME_FACTOR_MAX - COUNT_TIME_FACTOR_MIN;
+    //Statistics
+    public static final double STATISTICS_DISTANCE_ACCURANCY = 0.2;
+    public static final double STATISTICS_ANGLE_ACCURANCY = 10.0;
+
 }

@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 public class StatisticsPrinter implements IStatisticsPrinter {
+    private static final String COLUMN_SEPARATOR = "\t";
     private static final Logger logger = LoggerFactory.getLogger(StatisticsPrinter.class);
 
     //Statistics
@@ -34,13 +35,12 @@ public class StatisticsPrinter implements IStatisticsPrinter {
         } catch (IOException e) {
             logger.error("Could not mark ideal path reader, readings will not be restarted", e);
         }
+        System.out.println(buildStatisticsHeader());
     }
 
     @Override
     public void printAndReset() {
-        System.out.println(Double.toString(factorMedium).replace('.', ',') + "\t" + Double.toString(bestFactorMedium).replace('.', ',') +
-                "\t" + jumpsCount + "\t" + agentCount + "\t" + Double.toString(locationErrorSum / intervalCount).replace('.', ',') + "\t" +
-                Double.toString(alphaErrorSum / intervalCount).replace('.', ','));
+        System.out.println(buildStatisticsText());
         try {
             reader.reset();
         } catch (IOException e) {
@@ -52,6 +52,28 @@ public class StatisticsPrinter implements IStatisticsPrinter {
         jumpsCount = 0;
         locationErrorSum = 0.0;
         alphaErrorSum = 0.0;
+    }
+
+    private String buildStatisticsHeader() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Średnia energii/fitnesu").append(COLUMN_SEPARATOR);
+        builder.append("Średnia najlepszej energii/fitnesu").append(COLUMN_SEPARATOR);
+        builder.append("Ilość teleportacji").append(COLUMN_SEPARATOR);
+        builder.append("Ilość agentów").append(COLUMN_SEPARATOR);
+        builder.append("Średni błąd odległości").append(COLUMN_SEPARATOR);
+        builder.append("Średni błąd kąta").append(COLUMN_SEPARATOR);
+        return builder.toString();
+    }
+
+    private String buildStatisticsText() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(factorMedium).append(COLUMN_SEPARATOR);
+        builder.append(bestFactorMedium).append(COLUMN_SEPARATOR);
+        builder.append(jumpsCount).append(COLUMN_SEPARATOR);
+        builder.append(agentCount).append(COLUMN_SEPARATOR);
+        builder.append(locationErrorSum / intervalCount).append(COLUMN_SEPARATOR);
+        builder.append(alphaErrorSum / intervalCount).append(COLUMN_SEPARATOR);
+        return builder.toString().replace('.', ',');
     }
 
     @Override
@@ -76,6 +98,13 @@ public class StatisticsPrinter implements IStatisticsPrinter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private double calculateFitness(double value, double accuracy) {
+        if (value > accuracy) {
+            return 0.0;
+        }
+        return 1.0 - (value / accuracy);
     }
 
 
