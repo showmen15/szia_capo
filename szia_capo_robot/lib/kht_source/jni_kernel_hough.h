@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ([BJJJDDDD)Ljava/util/List;
  */
 JNIEXPORT jobject JNICALL Java_pl_edu_agh_capo_hough_jni_JniKernelHough_kht
-  (JNIEnv *, jobject, jbyteArray, jlong, jlong, jlong, jdouble, jdouble, jdouble, jdouble);
+  (JNIEnv *, jobject, jbyteArray, jlong, jlong, jint, jlong, jdouble, jdouble, jdouble, jdouble);
 
 #ifdef __cplusplus
 }

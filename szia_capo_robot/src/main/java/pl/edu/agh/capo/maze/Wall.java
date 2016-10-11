@@ -16,6 +16,18 @@ public class Wall {
 
     private Coordinates to;
 
+    public Wall() {
+    }
+
+    public Wall(Wall wall) {
+        this.id = wall.id;
+        this.width = wall.width;
+        this.height = wall.height;
+        this.color = wall.color;
+        this.from = wall.from;
+        this.to = wall.to;
+    }
+
     public String getId() {
         return id;
     }
@@ -63,4 +75,5 @@ public class Wall {
     public void setTo(Coordinates to) {
         this.to = to;
     }
+
 }

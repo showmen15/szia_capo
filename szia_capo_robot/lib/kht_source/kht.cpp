@@ -39,7 +39,7 @@
 
 // Kernel-based Hough transform (KHT) for detecting straight lines in images.
 void
-kht(lines_list_t &lines, unsigned char *binary_image, const size_t image_width, const size_t image_height, const size_t cluster_min_size, const double cluster_min_deviation, const double delta, const double kernel_min_height, const double n_sigmas)
+kht(lines_list_t &lines, section_list_t &sections, unsigned char *binary_image, const size_t image_width, const size_t image_height, const size_t cluster_min_size, const double cluster_min_deviation, const double delta, const double kernel_min_height, const double n_sigmas)
 {
 	static strings_list_t strings;
 	static clusters_list_t clusters;
@@ -51,7 +51,7 @@ kht(lines_list_t &lines, unsigned char *binary_image, const size_t image_width, 
 
 	// Perform the proposed Hough transform voting scheme.
 	accumulator.init( image_width, image_height, delta );
-	voting( accumulator, clusters, kernel_min_height, n_sigmas );
+	voting( accumulator, sections, clusters, kernel_min_height, n_sigmas );
 
 	// Retrieve the most significant straight lines from the resulting voting map.
 	peak_detection( lines, accumulator );

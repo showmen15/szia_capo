@@ -14,17 +14,17 @@ import java.util.List;
 public class VisionImage {
 
 
-    private static final byte VISION_PER_PIXEL = 1;
+    private static final byte PIXEL_VALUE = 1;
     private final byte[] bytes;
     private final int size;
     private final int halfSize;
     private final double maxDistance;
 
-    public VisionImage(List<Vision> visions, int maxSize) {
+    public VisionImage(List<Vision> visions) {
         Vision vision = visions.stream().max((v1, v2) -> Double.compare(v1.getDistance(), v2.getDistance())).get();
         this.maxDistance = vision.getDistance();
-        this.size = (int) (maxSize * maxDistance / CapoRobotConstants.MAX_VISION_DISTANCE);
-        this.halfSize = size / 2;
+        this.halfSize = (int) Math.ceil(maxDistance / CapoRobotConstants.VISION_PER_PIXEL) + 1;
+        this.size = halfSize * 2;
         this.bytes = new byte[size * size];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = 0;
@@ -49,15 +49,15 @@ public class VisionImage {
     }
 
     private void addPoint(Vision vision) {
-        double distance = vision.getDistance() / maxDistance * (halfSize - 1); // distance <- [0,1)
+        double distance = vision.getDistance() / CapoRobotConstants.VISION_PER_PIXEL;
         double angleInRadians = Math.toRadians(vision.getAngle());
         addPoint(distance, angleInRadians);
     }
 
     private void addPoint(double distance, double angleInRadians) {
-        int x = (int) (halfSize + (Math.sin(angleInRadians) * distance));
-        int y = (int) (halfSize - (Math.cos(angleInRadians) * distance));
-        bytes[y * size + x] = VISION_PER_PIXEL;
+        int x = (int) Math.round(halfSize + (Math.sin(angleInRadians) * distance));
+        int y = (int) Math.round(halfSize - (Math.cos(angleInRadians) * distance));
+        bytes[y * size + x] = PIXEL_VALUE;
     }
 
     public void translateLines(List<Line> lines) {
@@ -65,7 +65,7 @@ public class VisionImage {
     }
 
     private void translateLine(Line line) {
-        double rho = line.getRawRho() * maxDistance / (halfSize - 1);
+        double rho = line.getRawRho() * PIXEL_VALUE;
         double theta = line.getRawTheta();
         if (rho > 0) {
             if (theta <= 90) {

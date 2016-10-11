@@ -7,4 +7,7 @@ public abstract class AbstractFitnessEstimator {
     public abstract double estimateFitnessByTries(Coordinates coords, Double angle, int tries, int matches);
 
     public abstract double estimateFitness(Location location);
+
+    public void printDebug() {
+    }
 }

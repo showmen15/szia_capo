@@ -82,7 +82,7 @@ public class StatisticsPrinter implements IStatisticsPrinter {
         intervalCount++;
         double intervalFactorMedium = intervalFactorSum / agentCount;
         factorMedium += (intervalFactorMedium - factorMedium) / intervalCount;
-        calculateError(best.getAgent());
+        //calculateError(best.getAgent());
         bestFactorMedium += (best.getFactor() - bestFactorMedium) / intervalCount;
         updateJumps(best.getAgent());
     }

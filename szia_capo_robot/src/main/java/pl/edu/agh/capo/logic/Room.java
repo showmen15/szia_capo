@@ -1,5 +1,7 @@
 package pl.edu.agh.capo.logic;
 
+import math.geom2d.Point2D;
+import math.geom2d.Vector2D;
 import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
@@ -11,31 +13,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class Room {
 
+    private final static Random random = new Random();
     private final List<Wall> walls;
     private final List<Gate> gates;
-
     private final double minY;
     private final double maxY;
     private final double minX;
     private final double maxX;
-
     private final List<Gate> northGates;
     private final List<Gate> southGates;
     private final List<Gate> westGates;
     private final List<Gate> eastGates;
-
     private final String spaceId;
-
-    private final static Random random = new Random();
-    private Map<String, Room> gateRooms;
+    private Map<Integer, Room> gateRooms;
+    private final List<Point2D[]> wallVectors = new ArrayList<>();
+    private final List<Point2D[]> gateVectors = new ArrayList<>();
+    private List<Room> rooms;
 
     public Room(List<Wall> walls, List<Gate> gates, String spaceId) {
-        this.walls = walls;
-        this.gates = gates;
         this.spaceId = spaceId;
+        this.walls = walls;
+
+        groupWalls(walls).forEach(wall -> wallVectors.add(buildWallVector(wall)));
+
+        this.gates = gates;
+        gates.forEach(gate -> gateVectors.add(buildGateVector(gate)));
 
         northGates = new ArrayList<>();
         southGates = new ArrayList<>();
@@ -48,6 +54,63 @@ public class Room {
         maxX = MazeHelper.getMaxX(walls);
 
         splitGates();
+    }
+
+    private void printWalls(List<Wall> walls) {
+        System.out.println(spaceId);
+        for (Wall wall : walls) {
+            System.out.println("buildWall(\"" + wall.getId() + "\"" + ", " + wall.getFrom().getX() + ", " + wall.getFrom().getY() + ", " + wall.getTo().getX() + ", " + wall.getTo().getY() + "),");
+        }
+    }
+
+    private Point2D[] buildGateVector(Gate gate) {
+        Point2D wallStart = new Point2D(gate.getFrom().getX(), gate.getFrom().getY());
+        Point2D wallEnd = new Point2D(gate.getTo().getX(), gate.getTo().getY());
+        Point2D[] vector = {wallStart, wallEnd};
+        return vector;
+    }
+
+    protected Point2D[] buildWallVector(Wall wall) {
+        Point2D wallStart = new Point2D(wall.getFrom().getX(), wall.getFrom().getY());
+        Point2D wallEnd = new Point2D(wall.getTo().getX(), wall.getTo().getY());
+        Point2D[] vector = {wallStart, wallEnd};
+        return vector;
+    }
+
+    private boolean isColinear(Wall wall, Wall wall2) {
+        Vector2D wallVector = fromWall(wall);
+        Vector2D nextWallVector = fromWall(wall2);
+        return wallVector.isColinear(nextWallVector);
+    }
+
+    private List<Wall> groupWalls(List<Wall> walls) {
+        List<Wall> result = new ArrayList<>();
+        int wallSize = walls.size();
+        for (int i = 0; i < wallSize; i++) {
+            Wall wall = new Wall(walls.get(i));
+            int j;
+            for (j = i + 1; j < wallSize; j++) {
+                Wall nextWall = walls.get(j);
+                if (isColinear(nextWall, wall)) {
+                    if (wall.getTo().equals(nextWall.getFrom())) {
+                        wall.setTo(nextWall.getTo());
+                    } else if (wall.getFrom().equals(nextWall.getTo())) {
+                        wall.setFrom(nextWall.getFrom());
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            i = j - 1;
+            result.add(wall);
+        }
+        return result;
+    }
+
+    private Vector2D fromWall(Wall wall) {
+        return new Vector2D(new Point2D(wall.getFrom().getX(), wall.getFrom().getY()), new Point2D(wall.getTo().getX(), wall.getTo().getY()));
     }
 
     public List<Wall> getWalls() {
@@ -164,12 +227,13 @@ public class Room {
         return coordinates;
     }
 
-    public void setGateRooms(Map<String, Room> gateRooms) {
+    public void setGateRooms(Map<Integer, Room> gateRooms) {
         this.gateRooms = gateRooms;
+        this.rooms = gates.stream().map(this::getRoomBehindGate).collect(Collectors.toList());
     }
 
     public Room getRoomBehindGate(Gate gate) {
-        return gateRooms.get(gate.getId());
+        return gateRooms.get(gates.indexOf(gate));
     }
 
     public Coordinates getCenter() {
@@ -186,5 +250,23 @@ public class Room {
                 '}';
     }
 
+    public List<Point2D[]> getGateVectors() {
+        return gateVectors;
+    }
 
+    public List<Point2D[]> getWallVectors() {
+        return wallVectors;
+    }
+
+    public List<Room> getRooms() {
+        return rooms;
+    }
+
+    public Room getRoomBehindGate(Point2D[] gate) {
+        return gateRooms.get(gateVectors.indexOf(gate));
+    }
+
+    public List<Wall> getGroupWalls() {
+        return groupWalls(walls);
+    }
 }

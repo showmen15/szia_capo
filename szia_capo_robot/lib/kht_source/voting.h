@@ -37,6 +37,6 @@
 #include "types.h"
 
 // Performs the proposed Hough transform voting scheme.
-void voting(accumulator_t &accumulator, const clusters_list_t &clusters, const double kernel_min_height, const double n_sigmas);
+void voting(accumulator_t &accumulator, section_list_t &sections, const clusters_list_t &clusters, const double kernel_min_height, const double n_sigmas);
 
 #endif // !_VOTING_

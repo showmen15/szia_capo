@@ -454,4 +454,15 @@ typedef list<pixel_t,500> string_t;
 // Specifies a list of string of feature pixels.
 typedef list<string_t,1000> strings_list_t;
 
+struct section_t{
+	const pixel_t *pixels;
+	size_t size;
+
+	double rho;
+	double theta;
+};
+
+// Specifies a list of sections.
+typedef list<section_t,1000> section_list_t;
+
 #endif // !_TYPES_

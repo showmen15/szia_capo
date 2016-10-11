@@ -12,11 +12,8 @@ public class PerpendicularLinesLocationEstimator {
     private final Room room;
     private CountItemsList<Location> locations = new CountItemsList<>();
 
-    public PerpendicularLinesLocationEstimator(Room room) {
+    public PerpendicularLinesLocationEstimator(Room room, Measure measure) {
         this.room = room;
-    }
-
-    public void prepareLocations(Measure measure) {
         int index = 0;
         List<Line> lines = measure.getLines();
         for (Line next : lines) {

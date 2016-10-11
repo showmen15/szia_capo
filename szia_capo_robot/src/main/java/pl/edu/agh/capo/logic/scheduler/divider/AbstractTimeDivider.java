@@ -2,6 +2,7 @@ package pl.edu.agh.capo.logic.scheduler.divider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.Room;
 import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
@@ -10,11 +11,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class AbstractTimeDivider {
     private static final Logger logger = LoggerFactory.getLogger(AbstractTimeDivider.class);
-    private final int intervalTime;
+    private final long intervalTime;
 
     private final List<Room> rooms;
     private final List<Agent> agents = new CopyOnWriteArrayList<>();
@@ -23,13 +25,13 @@ public abstract class AbstractTimeDivider {
     protected int agentCount = 0;
     protected double intervalFactorSum;
     // Current interval
-    private int[] currentIntervalTimes;
+    private long[] currentIntervalTimes;
     private boolean newInterval;
     private AgentFactorInfo best;
 
-    public AbstractTimeDivider(List<Room> rooms, Class<? extends AbstractFitnessEstimator> estimator, int intervalTime) {
+    public AbstractTimeDivider(List<Room> rooms, Class<? extends AbstractFitnessEstimator> estimator, int intervalTimeInMillis) {
         this.rooms = rooms;
-        this.intervalTime = intervalTime;
+        this.intervalTime = TimeUnit.MILLISECONDS.toNanos(intervalTimeInMillis);
         this.estimatorClass = estimator;
         this.rooms.forEach(this::buildAgent);
         reinitializeCurrentIntervalTimes();
@@ -41,7 +43,7 @@ public abstract class AbstractTimeDivider {
     }
 
     private void reinitializeCurrentIntervalTimes() {
-        currentIntervalTimes = new int[agentCount];
+        currentIntervalTimes = new long[agentCount];
     }
 
     public void reset() {
@@ -67,11 +69,13 @@ public abstract class AbstractTimeDivider {
     }
 
     public void updateFactors() {
+        agentFactorInfos.forEach(this::updateFactor);
+        updateTheBest();
+        addSearchedAgents();
         removeExcessAgents();
         addAgentInEmptyRooms();
         updateIndexes();
         intervalFactorSum = 0.0;
-        agentFactorInfos.forEach(this::updateFactor);
         newInterval = false;
     }
 
@@ -87,6 +91,63 @@ public abstract class AbstractTimeDivider {
         }
     }
 
+    private void addSearchedAgents() {
+        Map<Room, List<AgentFactorInfo>> agentsByRoom = agentFactorInfos.stream().collect(
+                Collectors.groupingBy(agentFactorInfo -> agentFactorInfo.getAgent().getRoom()));
+        agentsByRoom.forEach((room, list) -> addAgentsIfNeeded(list));
+    }
+
+    private void addAgentsIfNeeded(List<AgentFactorInfo> agentFactorInfos) {
+        double maxFitness = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getAgent().getFitness(), a2.getAgent().getFitness())).get().getAgent().getFitness();
+        AgentFactorInfo searcher = null;
+        for (AgentFactorInfo agentFactorInfo : agentFactorInfos) {
+            if (agentFactorInfo.getAgent().isBetterLocationInRoom(maxFitness) && noneFollowsSameHypothesis(agentFactorInfos, agentFactorInfo)) {
+                maxFitness = agentFactorInfo.getAgent().getBestLocationFitness();
+                searcher = agentFactorInfo;
+            }
+        }
+        addOrReplaceAgentIfNeeded(agentFactorInfos, searcher);
+    }
+
+    private boolean noneFollowsSameHypothesis(List<AgentFactorInfo> agentFactorInfos, AgentFactorInfo searcher) {
+        Location location = searcher.getAgent().getBestLocationInRoom();
+        double fitness = searcher.getAgent().getBestLocationFitness();
+        for (AgentFactorInfo info : agentFactorInfos) {
+            Agent agent = info.getAgent();
+            if (agent.getLocation().inNeighbourhoodOf(location)) {
+                agent.setLocation(location, fitness);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void addOrReplaceAgentIfNeeded(List<AgentFactorInfo> agentFactorInfos, AgentFactorInfo searcher) {
+        if (searcher != null) {
+            AgentFactorInfo max = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
+            if (searcher.getFactor() <= 0.9 * max.getFactor()) {
+                replaceWithBetterAgent(searcher, max.getFactor());
+            } else {
+                addBetterAgent(searcher, max.getFactor());
+            }
+        }
+    }
+
+    private void addBetterAgent(AgentFactorInfo searcher, double maxFactor) {
+        Location location = searcher.getAgent().getBestLocationInRoom();
+        addAgent(createBestFitAgentInRoom(searcher.getAgent().getRoom(), location, maxFactor));
+    }
+
+    private void replaceWithBetterAgent(AgentFactorInfo searcher, double maxFactor) {
+        addBetterAgent(searcher, maxFactor);
+        removeAgent(searcher);
+    }
+
+    private Agent createBestFitAgentInRoom(Room room, Location bestLocationInRoom, double energy) {
+        return new Agent(estimatorClass, room, bestLocationInRoom, energy * 0.51);
+    }
+
+
     private void removeExcessAgents() {
         Map<Room, List<AgentFactorInfo>> agentsByRoom = agentFactorInfos.stream().collect(
                 Collectors.groupingBy(agentFactorInfo -> agentFactorInfo.getAgent().getRoom()));
@@ -95,8 +156,14 @@ public abstract class AbstractTimeDivider {
 
     private void removeAgentsIfNeeded(List<AgentFactorInfo> agentFactorInfos) {
         if (agentFactorInfos.size() > 1) {
-            AgentFactorInfo max = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
-            agentFactorInfos.stream().filter(agentFactorInfo -> agentFactorInfo.getFactor() * 2 <= max.getFactor() || max.followsSameHyphotesis(agentFactorInfo)).forEach(this::removeAgent);
+            AgentFactorInfo maxFactor = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
+            for (AgentFactorInfo info : agentFactorInfos) {
+                if (!info.equals(maxFactor)) {
+                    if (info.getFactor() <= maxFactor.getFactor() * 0.5 || maxFactor.followsSameHyphotesis(info)) {
+                        removeAgent(info);
+                    }
+                }
+            }
         }
     }
 
@@ -106,26 +173,24 @@ public abstract class AbstractTimeDivider {
         agentCount--;
     }
 
-    public int[] getTimes() {
+    public long[] getTimes() {
         return currentIntervalTimes;
     }
 
     public void recalculate() {
-        //System.out.println("fitness sum");
         if (intervalFactorSum > 0.0) {
-            final int timeToDivide = intervalTime - distributedTimeToStarvingAgents();
+            final long timeToDivide = intervalTime - distributedTimeToStarvingAgents();
             agentFactorInfos.stream().filter(a -> a.getFactor() > 0).forEach(i -> setTime(i, i.calculateTime(timeToDivide)));
         } else {
             agentFactorInfos.forEach(i -> setTime(i, intervalTime / agentCount));
         }
-        updateTheBest();
     }
 
     private int distributedTimeToStarvingAgents() {
         int distributedTime = 0;
         for (AgentFactorInfo agentInfo : agentFactorInfos) {
             if (agentInfo.isStarved()) {
-                int time = intervalTime / agentCount;
+                long time = intervalTime / agentCount;
                 setTime(agentInfo, time);
                 distributedTime += time;
             }
@@ -133,7 +198,7 @@ public abstract class AbstractTimeDivider {
         return distributedTime;
     }
 
-    private void setTime(AgentFactorInfo agentFactorInfo, int time) {
+    private void setTime(AgentFactorInfo agentFactorInfo, long time) {
         if (time > 0) {
             agentFactorInfo.sleptIterations = 0;
         }
@@ -190,7 +255,7 @@ public abstract class AbstractTimeDivider {
             return ++sleptIterations > AgentFactorInfo.MAX_SLEPT_ITERATIONS;
         }
 
-        private int calculateTime(int timeToDivide) {
+        private int calculateTime(long timeToDivide) {
             return (int) (timeToDivide * factor / intervalFactorSum);
         }
 
@@ -206,7 +271,7 @@ public abstract class AbstractTimeDivider {
         protected abstract double estimatedFactor();
 
         public boolean followsSameHyphotesis(AgentFactorInfo agentFactorInfo) {
-            return !equals(agentFactorInfo) && getAgent().getLocation().inNeighbourhoodOf(agentFactorInfo.getAgent().getLocation());
+            return getAgent().getLocation().inNeighbourhoodOf(agentFactorInfo.getAgent().getLocation());
         }
 
         @Override

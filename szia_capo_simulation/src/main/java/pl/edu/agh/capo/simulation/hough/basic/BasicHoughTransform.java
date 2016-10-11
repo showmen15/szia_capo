@@ -3,6 +3,7 @@ package pl.edu.agh.capo.simulation.hough.basic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.edu.agh.capo.common.Line;
+import pl.edu.agh.capo.common.Section;
 import pl.edu.agh.capo.common.Vision;
 import pl.edu.agh.capo.hough.HoughTransform;
 import pl.edu.agh.capo.robot.Measure;
@@ -80,6 +81,11 @@ public class BasicHoughTransform implements HoughTransform {
 
     public List<Line> getLines() {
         return lines;
+    }
+
+    @Override
+    public List<Section> getSections() {
+        return new ArrayList<>();
     }
 
     private class Result {

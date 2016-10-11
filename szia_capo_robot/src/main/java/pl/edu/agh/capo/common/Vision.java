@@ -26,4 +26,13 @@ public class Vision {
     public double getFitness() {
         return fitness;
     }
+
+    @Override
+    public String toString() {
+        return "Vision{" +
+                "distance=" + distance +
+                ", angle=" + angle +
+                ", fitness=" + fitness +
+                '}';
+    }
 }

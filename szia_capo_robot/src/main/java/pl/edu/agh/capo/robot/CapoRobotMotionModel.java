@@ -2,7 +2,6 @@ package pl.edu.agh.capo.robot;
 
 
 import pl.edu.agh.capo.common.Location;
-import pl.edu.agh.capo.maze.Coordinates;
 
 public class CapoRobotMotionModel {
 
@@ -13,8 +12,8 @@ public class CapoRobotMotionModel {
     private double accelerationRight;
     private boolean isRandom;
 
-    public CapoRobotMotionModel(Coordinates coordinates, double angle) {
-        this.location = new Location(coordinates, angle);
+    public CapoRobotMotionModel(Location location) {
+        this.location = location;
     }
 
     /**

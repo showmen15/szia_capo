@@ -189,7 +189,7 @@ vote(accumulator_t &accumulator, size_t rho_start_index, const size_t theta_star
 
 // Performs the proposed Hough transform voting scheme.
 void
-voting(accumulator_t &accumulator, const clusters_list_t &clusters, const double kernel_min_height, const double n_sigmas)
+voting(accumulator_t &accumulator, section_list_t &sections, const clusters_list_t &clusters, const double kernel_min_height, const double n_sigmas)
 {
 	/* Leandro A. F. Fernandes, Manuel M. Oliveira
 	 * Real-time line detection through an improved Hough transform voting scheme
@@ -367,5 +367,16 @@ voting(accumulator_t &accumulator, const clusters_list_t &clusters, const double
 		vote( accumulator, kernel.rho_index,     kernel.theta_index - 1,    0.0, -delta,  1, -1, kernel.lambda[0], kernel.lambda[3], kernel.lambda[1], kernels_scale );
 		vote( accumulator, kernel.rho_index - 1, kernel.theta_index,     -delta,    0.0, -1,  1, kernel.lambda[0], kernel.lambda[3], kernel.lambda[1], kernels_scale );
 		vote( accumulator, kernel.rho_index - 1, kernel.theta_index - 1, -delta, -delta, -1, -1, kernel.lambda[0], kernel.lambda[3], kernel.lambda[1], kernels_scale );
+	}
+
+	sections.resize( used_kernels.size() );
+	for (int i=0; i< used_kernels.size(); i++) {
+		section_t &section = sections[i];
+		kernel_t &kernel = *used_kernels[i];
+
+		section.rho = kernel.rho;
+		section.theta = kernel.theta;
+		section.size = kernel.pcluster->size;
+		section.pixels = kernel.pcluster->pixels;
 	}
 }

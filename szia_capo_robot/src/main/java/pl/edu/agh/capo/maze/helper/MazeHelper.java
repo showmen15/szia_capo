@@ -17,10 +17,10 @@ public class MazeHelper {
             rooms.add(room);
         }
         for (Room room : rooms){
-            Map<String, Room> gateRooms = new HashMap<>();
-            for (Gate gate : room.getGates()){
-                Room nextRoom = findRoom(gate.getId(), room.getSpaceId(), rooms, maze);
-                gateRooms.put(gate.getId(), nextRoom);
+            Map<Integer, Room> gateRooms = new HashMap<>();
+            for (int i = 0; i < room.getGates().size(); i++) {
+                Room nextRoom = findRoom(room.getGates().get(i).getId(), room.getSpaceId(), rooms, maze);
+                gateRooms.put(i, nextRoom);
             }
             room.setGateRooms(gateRooms);
         }

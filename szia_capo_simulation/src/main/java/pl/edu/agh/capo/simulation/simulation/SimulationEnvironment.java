@@ -1,5 +1,6 @@
 package pl.edu.agh.capo.simulation.simulation;
 
+import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.Room;
 import pl.edu.agh.capo.logic.scheduler.Scheduler;
@@ -16,6 +17,7 @@ import pl.edu.agh.capo.simulation.ui.model.AgentViewModel;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class SimulationEnvironment {
     private final Scheduler scheduler;
@@ -74,10 +76,17 @@ public class SimulationEnvironment {
 
     public void previousAgent() {
         int index = timeDivider.getAgents().indexOf(currentAgent);
-        if (index == 0) {
-            index = timeDivider.getAgents().size();
-        }
-        currentAgent = timeDivider.getAgents().get((index - 1) % timeDivider.getAgents().size());
+        currentAgent.getFitnessEstimator().printDebug();
+        printLocation(currentAgent.getLocation());
+        int agentCount = timeDivider.getAgents().size();
+        currentAgent = timeDivider.getAgents().get((index - 1 + agentCount) % agentCount);
+    }
+
+    private void printLocation(Location location) {
+        System.out.println(
+                String.format(Locale.US, "estimator.estimateFitness(buildCoordinates(%f, %f).toPoint2D(), %f)",
+                        location.positionX, location.positionY, location.alpha)
+        );
     }
 
     public void setUpdateListener(Scheduler.UpdateMeasureListener updateView) {

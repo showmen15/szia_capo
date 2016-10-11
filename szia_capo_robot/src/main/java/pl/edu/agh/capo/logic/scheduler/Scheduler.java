@@ -68,30 +68,30 @@ public class Scheduler {
     }
 
     private class Worker implements Runnable {
-        private final int[] times;
+        private final long[] nanoTimes;
         private final Measure measure;
         private final HoughTransform houghTransform = new KernelBasedHoughTransform();
 
         private Agent currentAgent;
-        private int currentTime;
+        private long currentTime;
         private long currentStartTime;
 
         private Worker(Measure measure) {
             this.measure = measure;
-            this.times = divider.getTimes();
+            this.nanoTimes = divider.getTimes();
         }
 
         private void updateMeasure(AbstractTimeDivider.AgentFactorInfo info) {
             this.currentAgent = info.getAgent();
-            int currentTime = times[info.getIndex()];
+            long currentTime = nanoTimes[info.getIndex()];
             if (currentTime > 0) {
                 updateAgentWithMeasure(measure);
                 double countFactor = CapoRobotConstants.COUNT_TIME_FACTOR_MIN +
                         CapoRobotConstants.COUNT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
-                int countTime = (int) (countFactor * currentTime);
+                long countTime = (long) (countFactor * currentTime);
                 resetTime(countTime);
                 calculateUntilTimeLeft();
-                int timeLeft = (int) (currentTime - (System.currentTimeMillis() - currentStartTime));
+                int timeLeft = (int) (currentTime - (System.nanoTime() - currentStartTime));
                 resetTime(timeLeft);
                 estimateRandomUntilTimeLeft();
             }
@@ -100,10 +100,6 @@ public class Scheduler {
         private void calculateUntilTimeLeft() {
             try {
                 checkTime();
-                currentAgent.prepareCalculations();
-                while (currentAgent.calculate()) {
-                    checkTime();
-                }
                 while (true) {
                     currentAgent.estimateInNeighbourhood();
                     checkTime();
@@ -112,22 +108,25 @@ public class Scheduler {
             }
         }
 
-        private void resetTime(int time) {
+        private void resetTime(long time) {
             this.currentTime = time;
-            this.currentStartTime = System.currentTimeMillis();
+            this.currentStartTime = System.nanoTime();
         }
 
         private void updateAgentWithMeasure(Measure measure) {
             if (measure != null) {
                 measure.setLines(houghTransform.getLines());
+                measure.setSections(houghTransform.getSections());
                 currentAgent.setMeasure(measure, millisSinceLastMeasure);
-                //agent.setMeasure(measure, new ArrayList<>());
-                currentAgent.estimateFitness();
             }
         }
 
         private void estimateRandomUntilTimeLeft() {
             try {
+                currentAgent.prepareCalculations();
+                while (currentAgent.calculate()) {
+                    checkTime();
+                }
                 while (true) {
                     currentAgent.estimateRandom();
                     checkTime();
@@ -137,7 +136,7 @@ public class Scheduler {
         }
 
         private void checkTime() throws TimeoutException {
-            long diff = System.currentTimeMillis() - currentStartTime;
+            long diff = System.nanoTime() - currentStartTime;
             if (diff >= currentTime) {
                 throw new TimeoutException();
             }
