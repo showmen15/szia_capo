@@ -83,6 +83,7 @@ public class Agent {
         resetBestLocation();
     }
 
+    //todo: nie trzeba w każdym agencie
     public void prepareAngles(Line line) {
         double theta = line.getTheta();
         angles.add(Location.normalizeAlpha(90 - theta));

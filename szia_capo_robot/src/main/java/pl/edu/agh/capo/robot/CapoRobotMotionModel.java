@@ -35,7 +35,7 @@ public class CapoRobotMotionModel {
         }
 
         if (velocityLeft == velocityRight) {
-            return calculateLocation(velocityRight, velocityLeft, deltaTime);
+            return calculateLocation(velocityRight, deltaTime);
         }
         return calculateLocationWithDirectionChange(velocityRight, velocityLeft, deltaTime);
     }
@@ -75,16 +75,26 @@ public class CapoRobotMotionModel {
     }
 
     /**
+     * todo:sprawdzić
+     * $$\omega = (V_l - V_p) / (2*WHEELS_HALF_DISTANCE)$$
+     $$r = WHEELS_HALF_DISTANCE * (V_l + V_r) / (V_l - V_r)$$
+     $$x_k = \cos(\omega * d_t) * r * \sin(\theta) - \sin(\omega *d_t) * (y_{k-1}$$
+     $$y_k = \sin(\omega * d_t) * r * \sin(\theta)$$
+
+     $$x_k = x_{k-1} + V * \cos(\theta * d_t)$$
+     $$y_k = y_{k-1} + V * \sin(\theta * d_t)$$
+     */
+
+    /**
      * Direction is adjusted to motionmodel
      */
     private double getAdjustedDirectionToRadians() {
         return Math.toRadians(location.alpha - 90);
     }
 
-    private Location calculateLocation(double velocityRight, double velocityLeft, double deltaTime) {
-        double linearVelocity = getLinearVelocity(velocityRight, velocityLeft);
-        double x = location.positionX + linearVelocity * Math.cos(getAdjustedDirectionToRadians() * deltaTime);
-        double y = location.positionY + linearVelocity * Math.sin(getAdjustedDirectionToRadians() * deltaTime);
+    private Location calculateLocation(double velocityLeft, double deltaTime) {
+        double x = location.positionX + velocityLeft * Math.cos(getAdjustedDirectionToRadians() * deltaTime);
+        double y = location.positionY + velocityLeft * Math.sin(getAdjustedDirectionToRadians() * deltaTime);
         return new Location(x, y, location.alpha);
     }
 

@@ -7,45 +7,50 @@ import pl.edu.agh.capo.hough.jni.KernelBasedHoughTransform;
 import pl.edu.agh.capo.logic.Agent;
 import pl.edu.agh.capo.logic.scheduler.divider.AbstractTimeDivider;
 import pl.edu.agh.capo.robot.CapoRobotConstants;
+import pl.edu.agh.capo.robot.IMeasureReader;
 import pl.edu.agh.capo.robot.Measure;
 
 public class Scheduler {
     private static final Logger logger = LoggerFactory.getLogger(Scheduler.class);
+    private static final HoughTransform houghTransform = new KernelBasedHoughTransform();
     private final AbstractTimeDivider divider;
+    private final IMeasureReader measureReader;
 
     private UpdateMeasureListener listener;
     private Measure currentMeasure;
     private double millisSinceLastMeasure = 0.0;
+    private OnFinishListener onFinishListener;
 
-    public Scheduler(AbstractTimeDivider divider) {
+    public Scheduler(AbstractTimeDivider divider, IMeasureReader measureReader) {
         this.divider = divider;
+        this.measureReader = measureReader;
     }
 
-    public void update() {
-        if (currentMeasure != null) {
-            divider.updateFactors();
-            Thread worker = createWorker();
-            worker.start();
-            divider.recalculate();
-            try {
-                worker.join();
-            } catch (InterruptedException e) {
-                logger.error("Could not wait for worker", e);
+    private synchronized void startWorker(Worker worker) {
+        Thread workerThread = new Thread(worker);
+        workerThread.start();
+        divider.recalculate();
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            logger.error("Could not wait for worker", e);
+        }
+    }
+
+    public void start() {
+        if (!measureReader.isFinished()) {
+            if (measureReader.isIdle()) {
+                startWorker(new Worker());
+            } else {
+                calculateMeasuresTimeDifference(measureReader.read());
+                startWorker(new MeasureWorker());
             }
+            divider.updateFactors();
+            start();
         }
-    }
-
-    public void update(Measure measure) {
-        if (measuresFinished(measure)) {
-            divider.reset();
-        } else {
-            calculateMeasuresTimeDifference(measure);
-            update();
+        if (listener != null) {
+            onFinishListener.onFinish();
         }
-    }
-
-    private boolean measuresFinished(Measure measure) {
-        return measure == null;
     }
 
     private void calculateMeasuresTimeDifference(Measure measure) {
@@ -55,46 +60,70 @@ public class Scheduler {
         this.currentMeasure = measure;
     }
 
-    private Thread createWorker() {
-        return new Thread(new Worker(currentMeasure));
-    }
-
     public void setListener(UpdateMeasureListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnFinishListener(OnFinishListener onFinishListener) {
+        this.onFinishListener = onFinishListener;
     }
 
     public interface UpdateMeasureListener {
         void onUpdate();
     }
 
+    public interface OnFinishListener {
+        void onFinish();
+    }
+
+    private class MeasureWorker extends Worker {
+
+        @Override
+        protected void estimatePosition(long currentTime) {
+            currentAgent.setMeasure(currentMeasure, millisSinceLastMeasure);
+            super.estimatePosition(currentTime);
+        }
+
+        @Override
+        public void run() {
+            long time = System.currentTimeMillis();
+            houghTransform.run(currentMeasure, CapoRobotConstants.HOUGH_THRESHOLD, CapoRobotConstants.HOUGH_MAX_LINES_COUNT);
+            currentMeasure.setLines(houghTransform.getLines());
+            currentMeasure.setSections(houghTransform.getSections());
+            super.run();
+            long end = System.currentTimeMillis();
+            logger.debug("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
+        }
+    }
+
     private class Worker implements Runnable {
         private final long[] nanoTimes;
-        private final Measure measure;
-        private final HoughTransform houghTransform = new KernelBasedHoughTransform();
 
-        private Agent currentAgent;
+        protected Agent currentAgent;
         private long currentTime;
         private long currentStartTime;
 
-        private Worker(Measure measure) {
-            this.measure = measure;
+        private Worker() {
             this.nanoTimes = divider.getTimes();
         }
 
-        private void updateMeasure(AbstractTimeDivider.AgentFactorInfo info) {
+        private void updateAgent(AbstractTimeDivider.AgentFactorInfo info) {
             this.currentAgent = info.getAgent();
             long currentTime = nanoTimes[info.getIndex()];
             if (currentTime > 0) {
-                updateAgentWithMeasure(measure);
-                double countFactor = CapoRobotConstants.COUNT_TIME_FACTOR_MIN +
-                        CapoRobotConstants.COUNT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
-                long countTime = (long) (countFactor * currentTime);
-                resetTime(countTime);
-                calculateUntilTimeLeft();
-                int timeLeft = (int) (currentTime - (System.nanoTime() - currentStartTime));
-                resetTime(timeLeft);
-                estimateRandomUntilTimeLeft();
-            }
+                estimatePosition(currentTime);
+        }
+        }
+
+        protected void estimatePosition(long currentTime) {
+            double countFactor = CapoRobotConstants.COUNT_TIME_FACTOR_MIN +
+                    CapoRobotConstants.COUNT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
+            long countTime = (long) (countFactor * currentTime);
+            resetTime(countTime);
+            calculateUntilTimeLeft();
+            int timeLeft = (int) (currentTime - (System.nanoTime() - currentStartTime));
+            resetTime(timeLeft);
+            estimateRandomUntilTimeLeft();
         }
 
         private void calculateUntilTimeLeft() {
@@ -102,10 +131,10 @@ public class Scheduler {
                 checkTime();
                 while (true) {
                     currentAgent.estimateInNeighbourhood();
-                    checkTime();
-                }
-            } catch (TimeoutException e) {
+                checkTime();
             }
+            } catch (TimeoutException e) {
+        }
         }
 
         private void resetTime(long time) {
@@ -113,47 +142,37 @@ public class Scheduler {
             this.currentStartTime = System.nanoTime();
         }
 
-        private void updateAgentWithMeasure(Measure measure) {
-            if (measure != null) {
-                measure.setLines(houghTransform.getLines());
-                measure.setSections(houghTransform.getSections());
-                currentAgent.setMeasure(measure, millisSinceLastMeasure);
-            }
-        }
-
         private void estimateRandomUntilTimeLeft() {
             try {
                 currentAgent.prepareCalculations();
                 while (currentAgent.calculate()) {
                     checkTime();
-                }
+            }
                 while (true) {
                     currentAgent.estimateRandom();
                     checkTime();
-                }
-            } catch (TimeoutException e) {
             }
+            } catch (TimeoutException e) {
+        }
         }
 
         private void checkTime() throws TimeoutException {
             long diff = System.nanoTime() - currentStartTime;
             if (diff >= currentTime) {
                 throw new TimeoutException();
-            }
+        }
         }
 
         @Override
         public void run() {
-            //  long time = System.currentTimeMillis();
-            houghTransform.run(measure, CapoRobotConstants.HOUGH_THRESHOLD, CapoRobotConstants.HOUGH_MAX_LINES_COUNT);
-
-            divider.getAgentFactorInfos().forEach(this::updateMeasure);
-            if (listener != null) {
-                new Thread(listener::onUpdate).start();
-            }
-            //     long end = System.currentTimeMillis();
-            //    logger.debug("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
+            divider.getAgentFactorInfos().forEach(this::updateAgent);
+            synchronized (Scheduler.this) {
+                Scheduler.this.notify();
         }
+            if (listener != null) {
+                listener.onUpdate();
+        }
+    }
 
         private class TimeoutException extends Exception {
         }

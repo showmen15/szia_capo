@@ -75,11 +75,11 @@ public class MeasureFileReader implements Iterator<Measure> {
 
     @Override
     public Measure next() {
-        if (!measures.hasNext()) {
-            measures = list.iterator();
-            return null;
-        }
         return measures.next();
+    }
+
+    public void reset() {
+        measures = list.iterator();
     }
 
 }

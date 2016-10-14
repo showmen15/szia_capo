@@ -18,6 +18,7 @@ import pl.edu.agh.capo.simulation.ui.model.AgentViewModel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public class SimulationEnvironment {
     private final Scheduler scheduler;
@@ -26,6 +27,7 @@ public class SimulationEnvironment {
 
     private boolean showTheBest;
     private Agent currentAgent;
+    private boolean showAll;
 
     private SimulationEnvironment(Scheduler scheduler, MeasureSimulator simulator, AbstractTimeDivider timeDivider) {
         this.scheduler = scheduler;
@@ -41,9 +43,15 @@ public class SimulationEnvironment {
         AbstractTimeDivider timeDivider = new StatisticsEnergyTimeDivider(rooms, CapoRobotConstants.FITNESS_ESTIMATOR_CLASS,
                 CapoRobotConstants.INTERVAL_TIME, statisticsPrinter);
 
-        Scheduler scheduler = new Scheduler(timeDivider);
-        MeasureSimulator simulator = new MeasureSimulator(new MeasureFileReader(measureFile.getMeasures()), scheduler);
-        simulator.start();
+        MeasureFileReader reader = new MeasureFileReader(measureFile.getMeasures());
+        MeasureSimulator simulator = new MeasureSimulator(reader);
+        Scheduler scheduler = new Scheduler(timeDivider, simulator);
+        scheduler.setOnFinishListener(() -> {
+            reader.reset();
+            timeDivider.reset();
+            scheduler.start();
+        });
+        new Thread(scheduler::start).start();
         return new SimulationEnvironment(scheduler, simulator, timeDivider);
     }
 
@@ -55,10 +63,13 @@ public class SimulationEnvironment {
         if (showTheBest) {
             currentAgent = timeDivider.getBest().getAgent();
         }
-//        return timeDivider.getAgents().stream()
-//                .map(agent -> new AgentViewModel(agent, timeDivider.getFactor(agent), currentAgent.equals(agent)))
-//                .collect(Collectors.toList());
-        return Collections.singletonList(new AgentViewModel(currentAgent, timeDivider.getFactor(currentAgent), true));
+        if (showAll) {
+            return timeDivider.getAgents().stream()
+                    .map(agent -> new AgentViewModel(agent, timeDivider.getFactor(agent), currentAgent.equals(agent)))
+                    .collect(Collectors.toList());
+        } else {
+            return Collections.singletonList(new AgentViewModel(currentAgent, timeDivider.getFactor(currentAgent), true));
+        }
     }
 
     public Agent getCurrentAgent() {
@@ -91,5 +102,9 @@ public class SimulationEnvironment {
 
     public void setUpdateListener(Scheduler.UpdateMeasureListener updateView) {
         scheduler.setListener(updateView);
+    }
+
+    public void setShowAll(boolean showAll) {
+        this.showAll = showAll;
     }
 }

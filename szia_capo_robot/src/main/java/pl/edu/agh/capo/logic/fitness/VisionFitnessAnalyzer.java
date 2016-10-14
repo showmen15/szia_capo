@@ -122,7 +122,7 @@ public class VisionFitnessAnalyzer {
     }
 
     private double estimateInRoomBehindGate(Room room, double x, double y, double angle, double distance, boolean overMaxRange) {
-        if (distance < -CapoRobotConstants.VISION_ACCURACY) {
+        if (distance < -CapoRobotConstants.VISION_ESTIMATOR_DISTANCE_ACCURACY) {
             return 0;
         }
         VisionFitnessAnalyzer fitnessAnalyzer = new VisionFitnessAnalyzer(room, x, y, this.angle);
@@ -159,13 +159,13 @@ public class VisionFitnessAnalyzer {
 
     private double countMeasureEstimation(double distance, double distanceToWall, boolean overMaxRange) {
         if (overMaxRange) {
-            return (distanceToWall >= distance) ? 0.0 : 1.0;
+            return (distanceToWall < distance) ? 0.0 : 1.0;
         }
 
         double diff = Math.abs(distanceToWall - distance);
-        if (diff > CapoRobotConstants.VISION_ACCURACY) {
+        if (diff > CapoRobotConstants.VISION_ESTIMATOR_DISTANCE_ACCURACY) {
             return 0.0;
         }
-        return 1.0 - (diff / CapoRobotConstants.VISION_ACCURACY);
+        return 1.0 - (diff / CapoRobotConstants.VISION_ESTIMATOR_DISTANCE_ACCURACY);
     }
 }

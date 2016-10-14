@@ -5,6 +5,7 @@ import pl.edu.agh.capo.simulation.simulation.SimulationEnvironment;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
@@ -21,6 +22,7 @@ public class InfoPanel extends JPanel {
 
     private JCheckBox bestAgentCheckbox;
     private JCheckBox measureCheckbox;
+    private JCheckBox showAllCheckbox;
 
     private SimulationEnvironment environment;
 
@@ -53,7 +55,7 @@ public class InfoPanel extends JPanel {
     }
 
     private void buildView() {
-        JPanel buttonPanel = new JPanel(new GridLayout(7, 1));
+        JPanel buttonPanel = new JPanel(new GridLayout(8, 1));
 
         agentsLabel = buildLabel("Agent");
         buttonPanel.add(agentsLabel);
@@ -76,10 +78,14 @@ public class InfoPanel extends JPanel {
         measuredEnergy = buildLabel("");
         buttonPanel.add(measuredEnergy);
 
-        measureCheckbox = buildCheckbox("Pobieraj pomiary cyklicznie co 2 sek.");
+        measureCheckbox = buildCheckbox("Pobieraj pomiary cyklicznie");
         measureCheckbox.addActionListener(a -> environment.setUpdateMeasures(measureCheckbox.isSelected()));
-
         buttonPanel.add(measureCheckbox);
+
+        showAllCheckbox = buildCheckbox("Pokaż wszystkich agentów");
+        showAllCheckbox.doClick();
+        showAllCheckbox.addActionListener(this::onShowAllClick);
+        buttonPanel.add(showAllCheckbox);
 
         bestAgentCheckbox = buildCheckbox("Pokazuj najlepszego agenta");
         bestAgentCheckbox.addActionListener(a -> showBestAgent(bestAgentCheckbox.isSelected()));
@@ -95,6 +101,18 @@ public class InfoPanel extends JPanel {
         this.invalidate();
     }
 
+    private void onShowAllClick(ActionEvent actionEvent) {
+        boolean showAllSelected = showAllCheckbox.isSelected();
+        enableAgentNavigationButtons(!showAllSelected);
+        environment.setShowAll(showAllSelected);
+    }
+
+    private void enableAgentNavigationButtons(boolean enable) {
+        nextAgentButton.setEnabled(enable);
+        prevAgentButton.setEnabled(enable);
+        bestAgentCheckbox.setEnabled(enable);
+    }
+
     private void showBestAgent(boolean isSelected) {
         enableGoToAgentButtons(!isSelected);
         environment.setShowBestAgent(isSelected);
@@ -104,6 +122,7 @@ public class InfoPanel extends JPanel {
     private void setButtonsEnable(boolean enable) {
         bestAgentCheckbox.setEnabled(enable);
         measureCheckbox.setEnabled(enable);
+        showAllCheckbox.setEnabled(enable);
         enableGoToAgentButtons(enable);
     }
 

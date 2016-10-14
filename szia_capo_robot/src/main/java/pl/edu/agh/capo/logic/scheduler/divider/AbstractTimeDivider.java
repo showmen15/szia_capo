@@ -125,11 +125,7 @@ public abstract class AbstractTimeDivider {
     private void addOrReplaceAgentIfNeeded(List<AgentFactorInfo> agentFactorInfos, AgentFactorInfo searcher) {
         if (searcher != null) {
             AgentFactorInfo max = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
-            if (searcher.getFactor() <= 0.9 * max.getFactor()) {
-                replaceWithBetterAgent(searcher, max.getFactor());
-            } else {
-                addBetterAgent(searcher, max.getFactor());
-            }
+            addBetterAgent(searcher, max.getFactor());
         }
     }
 

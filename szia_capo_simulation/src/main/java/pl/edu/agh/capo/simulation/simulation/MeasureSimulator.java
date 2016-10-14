@@ -1,32 +1,16 @@
 package pl.edu.agh.capo.simulation.simulation;
 
-import pl.edu.agh.capo.logic.scheduler.Scheduler;
-import pl.edu.agh.capo.robot.CapoRobotConstants;
+import pl.edu.agh.capo.robot.IMeasureReader;
 import pl.edu.agh.capo.robot.Measure;
 
 import java.util.Iterator;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-public class MeasureSimulator implements Runnable {
+public class MeasureSimulator implements IMeasureReader {
     private final Iterator<Measure> measures;
-    private final ScheduledExecutorService executorService;
-    private final Scheduler scheduler;
     private boolean updateMeasures = false;
 
-    public MeasureSimulator(Iterator<Measure> measures, Scheduler scheduler) {
+    public MeasureSimulator(Iterator<Measure> measures) {
         this.measures = measures;
-        this.scheduler = scheduler;
-        executorService = new ScheduledThreadPoolExecutor(1);
-    }
-
-    public void start() {
-        executorService.scheduleAtFixedRate(this, 0, CapoRobotConstants.INTERVAL_TIME, TimeUnit.MILLISECONDS);
-    }
-
-    public void stop() {
-        executorService.shutdown();
     }
 
     public void setUpdateMeasures(boolean updateMeasures) {
@@ -34,11 +18,17 @@ public class MeasureSimulator implements Runnable {
     }
 
     @Override
-    public void run() {
-        if (updateMeasures) {
-            scheduler.update(measures.next());
-        } else {
-            scheduler.update();
-        }
+    public Measure read() {
+        return measures.next();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return !measures.hasNext();
+    }
+
+    @Override
+    public boolean isIdle() {
+        return !updateMeasures;
     }
 }

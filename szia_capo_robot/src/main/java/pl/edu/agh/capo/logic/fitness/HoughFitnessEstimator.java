@@ -41,19 +41,19 @@ public class HoughFitnessEstimator extends VisionFitnessEstimator {
 
     private double estimateAngleFitness(Wall wall, double wallAlpha) {
         double alphaDifference = wall.calculateAlphaDifference(wallAlpha);
-        if (alphaDifference > CapoRobotConstants.HOUGH_ALPHA_ACCURANCY) {
+        if (alphaDifference > CapoRobotConstants.LINE_ESTIMATOR_ANGLE_ACCURACY) {
             return 0.0;
         }
-        return 1.0 - (alphaDifference / CapoRobotConstants.HOUGH_ALPHA_ACCURANCY);
+        return 1.0 - (alphaDifference / CapoRobotConstants.LINE_ESTIMATOR_ANGLE_ACCURACY);
     }
 
     private double estimateLineFitness(Wall wall, Line line, Coordinates coordinates) {
         double visionLineDistance = line.getRho();
         double minWallDistanceDifference = estimateMinDistanceDifference(wall, room, coordinates, visionLineDistance, Double.MAX_VALUE);
-        if (minWallDistanceDifference > CapoRobotConstants.HOUGH_VISION_ACCURANCY) {
+        if (minWallDistanceDifference > CapoRobotConstants.LINE_ESTIMATOR_RHO_ACCURACY) {
             return 0.0;
         }
-        return 1.0 - (minWallDistanceDifference / CapoRobotConstants.HOUGH_VISION_ACCURANCY);
+        return 1.0 - (minWallDistanceDifference / CapoRobotConstants.LINE_ESTIMATOR_RHO_ACCURACY);
     }
 
 

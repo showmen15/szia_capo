@@ -20,7 +20,6 @@ public class KernelBasedHoughTransform implements HoughTransform {
 
     private static final Logger logger = LoggerFactory.getLogger(JniKernelHough.class);
 
-    private VisionImage visionImage;
     private KhtResult result;
 
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
@@ -30,7 +29,7 @@ public class KernelBasedHoughTransform implements HoughTransform {
 
     @Override
     public void run(Measure measure, int threshold, int max) {
-        visionImage = new VisionImage(feasibleVisions(measure.getVisions()));
+        VisionImage visionImage = new VisionImage(feasibleVisions(measure.getVisions()));
         try {
             result = new JniKernelHough().kht(visionImage.toByteArray(),
                     visionImage.getSize(),
@@ -43,7 +42,7 @@ public class KernelBasedHoughTransform implements HoughTransform {
                     CapoRobotConstants.KHT_N_SIGMAS);
 
 
-            visionImage.writeToFileWithLines("vision-with-lines.bmp", getLines());
+            //visionImage.writeToFileWithLines("vision-with-lines.bmp", getLines());
             //visionImage.writeToFile("vision.bmp");
 
             visionImage.translateLines(result.getLines());
