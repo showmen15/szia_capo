@@ -68,7 +68,7 @@ public abstract class AbstractTimeDivider {
         return agentFactorInfos;
     }
 
-    public void updateFactors() {
+    public void updateAgents() {
         agentFactorInfos.forEach(this::updateFactor);
         updateTheBest();
         addSearchedAgents();
@@ -134,11 +134,6 @@ public abstract class AbstractTimeDivider {
         addAgent(createBestFitAgentInRoom(searcher.getAgent().getRoom(), location, maxFactor));
     }
 
-    private void replaceWithBetterAgent(AgentFactorInfo searcher, double maxFactor) {
-        addBetterAgent(searcher, maxFactor);
-        removeAgent(searcher);
-    }
-
     private Agent createBestFitAgentInRoom(Room room, Location bestLocationInRoom, double energy) {
         return new Agent(estimatorClass, room, bestLocationInRoom, energy * 0.51);
     }
@@ -153,13 +148,7 @@ public abstract class AbstractTimeDivider {
     private void removeAgentsIfNeeded(List<AgentFactorInfo> agentFactorInfos) {
         if (agentFactorInfos.size() > 1) {
             AgentFactorInfo maxFactor = agentFactorInfos.stream().max((a1, a2) -> Double.compare(a1.getFactor(), a2.getFactor())).get();
-            for (AgentFactorInfo info : agentFactorInfos) {
-                if (!info.equals(maxFactor)) {
-                    if (info.getFactor() <= maxFactor.getFactor() * 0.5 || maxFactor.followsSameHyphotesis(info)) {
-                        removeAgent(info);
-                    }
-                }
-            }
+            agentFactorInfos.stream().filter(info -> !info.equals(maxFactor)).filter(info -> info.getFactor() <= maxFactor.getFactor() * 0.5 || maxFactor.followsSameHyphotesis(info)).forEach(this::removeAgent);
         }
     }
 

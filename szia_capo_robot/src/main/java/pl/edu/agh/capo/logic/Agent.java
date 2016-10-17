@@ -2,13 +2,11 @@ package pl.edu.agh.capo.logic;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pl.edu.agh.capo.common.Line;
 import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.logic.estimator.PerpendicularLinesLocationEstimator;
 import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Gate;
-import pl.edu.agh.capo.robot.CapoRobotConstants;
 import pl.edu.agh.capo.robot.CapoRobotMotionModel;
 import pl.edu.agh.capo.robot.Measure;
 
@@ -18,7 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 public class Agent {
@@ -29,15 +26,14 @@ public class Agent {
     private final Class<? extends AbstractFitnessEstimator> fitnessEstimatorClass;
     private PerpendicularLinesLocationEstimator locationEstimator;
     private AbstractFitnessEstimator fitnessEstimator;
-    private List<Double> angles = new CopyOnWriteArrayList<>();
     private Measure measure;
     private double fitness;
     private Room room;
     private boolean isTheBest;
-    private Queue<Double> fitnesses = new LinkedList<>();
+    private final Queue<Double> fitnesses = new LinkedList<>();
     private double energy;
     private Location bestLocationInRoom;
-    private double bestLocationFitness;
+    private double bestLocationFitness = -2;
 
     public Agent(Class<? extends AbstractFitnessEstimator> fitnessEstimatorClass, Room room) {
         this(fitnessEstimatorClass, room, new Location(room.getCenter(), 0), 0.0);
@@ -70,10 +66,8 @@ public class Agent {
     }
 
     public void setMeasure(Measure measure, double deltaTimeInMillis) {
-        angles.clear();
         this.measure = measure;
         fitnessEstimator = buildEstimator();
-        measure.getLines().forEach(this::prepareAngles);
 
         if (deltaTimeInMillis > 0) {
             applyMotion(measure, deltaTimeInMillis);
@@ -81,15 +75,6 @@ public class Agent {
         fitness = estimateLocation();
         updateAlphaWithVisionAngles(getLocation().getCoordinates());
         resetBestLocation();
-    }
-
-    //todo: nie trzeba w każdym agencie
-    public void prepareAngles(Line line) {
-        double theta = line.getTheta();
-        angles.add(Location.normalizeAlpha(90 - theta));
-        angles.add(Location.normalizeAlpha(180 - theta));
-        angles.add(Location.normalizeAlpha(270 - theta));
-        angles.add(Location.normalizeAlpha(-theta));
     }
 
     private synchronized void applyMotion(Measure measure, double deltaTimeInMillis) {
@@ -116,12 +101,6 @@ public class Agent {
             motionModel.applyLocation(location, measure, deltaTimeInMillis);
             this.room = room.getRoomBehindGate(gate);
             //printIfBEst("Changed to " + room.getSpaceId());
-        }
-    }
-
-    private void printIfBest(String msg) {
-        if (isTheBest) {
-            logger.info(msg);
         }
     }
 
@@ -202,26 +181,28 @@ public class Agent {
         }
     }
 
+    public void estimateRandomWithAngles() {
+        Coordinates coordinates = room.getRandomPosition();
+        for (Double angle : measure.getAngles()) {
+            tryAndChangeBestPositionIfBetterEstimation(coordinates, angle);
+        }
+    }
+
     public void estimateRandom() {
         Coordinates coordinates = room.getRandomPosition();
-        if (angles.size() == 0) {
-            double angle = random.nextDouble() * 360 - 180;
-            tryAndChangeBestPositionIfBetterEstimation(coordinates, angle);
-        } else {
-            for (Double angle : angles) {
-                tryAndChangeBestPositionIfBetterEstimation(coordinates, angle);
-            }
-        }
+        double angle = random.nextDouble() * 360 - 180;
+        tryAndChangeBestPositionIfBetterEstimation(coordinates, angle);
     }
 
     public void estimateInNeighbourhood() {
         Coordinates coordinates = room.getRandomPositionInNeighbourhoodOf(getLocation());
-        if (angles.size() == 0) {
-            double angle = random.nextDouble() * 360 - 180;
-            tryAndChangePositionIfBetterEstimation(coordinates, angle);
-        } else {
-            updateAlphaWithVisionAngles(coordinates);
-        }
+        double angle = random.nextDouble() * 360 - 180;
+        tryAndChangePositionIfBetterEstimation(coordinates, angle);
+    }
+
+    public void estimateWithAnglesInNeighbourhood() {
+        Coordinates coordinates = room.getRandomPositionInNeighbourhoodOf(getLocation());
+        updateAlphaWithVisionAngles(coordinates);
     }
 
     private void tryAndChangeBestPositionIfBetterEstimation(Coordinates coords, Double angle) {
@@ -229,8 +210,7 @@ public class Agent {
         if (location.inNeighbourhoodOf(getLocation())) {
             tryAndChangePositionIfBetterEstimation(coords, angle);
         } else {
-            double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle, CapoRobotConstants.ESTIMATION_TRIES,
-                    CapoRobotConstants.ESTIMATION_MATCHED_TRIES);
+            double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle);
             if (estimated > bestLocationFitness) {
                 this.bestLocationFitness = estimated;
                 bestLocationInRoom = location;
@@ -239,12 +219,16 @@ public class Agent {
     }
 
     private void tryAndChangePositionIfBetterEstimation(Coordinates coords, Double angle) {
-        double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle,
-                CapoRobotConstants.ESTIMATION_TRIES, CapoRobotConstants.ESTIMATION_MATCHED_TRIES);
+        double estimated = fitnessEstimator.estimateFitnessByTries(coords, angle
+        );
         if (estimated > fitness) {
             this.fitness = estimated;
             Location location = new Location(coords, angle);
             motionModel.applyLocation(location);
+//
+//            if (fitnessEstimator instanceof ClusterFitnessEstimator) {
+//                sectionAward = ((ClusterFitnessEstimator) fitnessEstimator).getSectionAward();
+//            }
         }
     }
 
@@ -252,7 +236,7 @@ public class Agent {
      * Match coordinates with vision angles
      */
     private void updateAlphaWithVisionAngles(Coordinates coords) {
-        for (Double angle : angles) {
+        for (Double angle : measure.getAngles()) {
             tryAndChangePositionIfBetterEstimation(coords, angle);
         }
     }

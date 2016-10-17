@@ -85,7 +85,7 @@ public class PerpendicularLinesLocationEstimator {
 
     public class CountItemsList<E> extends ArrayList<E> {
 
-        private Map<E, Integer> count = new HashMap<>();
+        private final Map<E, Integer> count = new HashMap<>();
 
         public boolean add(E element) {
             if (!count.containsKey(element)) {

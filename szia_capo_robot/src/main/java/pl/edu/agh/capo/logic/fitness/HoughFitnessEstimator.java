@@ -78,86 +78,13 @@ public class HoughFitnessEstimator extends VisionFitnessEstimator {
         return Math.abs(rightWallDistance - visionLineDistance);
     }
 
-//    private Room getRightRoom(Room room, Line line, Coordinates coords) {
-//        if (rightWallDistance < visionLineDistance) {
-//            double minDifference = Math.abs(rightWallDistance - visionLineDistance);
-//            Room minDifferenceRoom = room;
-//            for (Gate gate : room.getEastGates()) {
-//                Room rightRoom = room.getRoomBehindGate(gate);
-//                double childDifference = calculateDistanceToRightWall(rightRoom, coords);
-//                if (childRightWallDistance < minRightWallDistance) {
-//                    minRightWallDistanceRoom = getRightRoom(rightRoom, line, coords);
-//                    minRightWallDistance = calculateDistanceToRightWall(minRightWallDistanceRoom, coords);
-//                }
-//            }
-//            return minRightWallDistanceRoom;
-//        }
-//        return room;
-//    }
-
-    private double calculateRightWallRho(Room room, Line line, Coordinates coords, double minRhoDifference) {
-        double rightWallRho = room.getMaxX() - coords.getX();
-        double rhoDifference = Math.abs(rightWallRho - line.getRho());
-
-        if (rhoDifference < minRhoDifference) {
-            minRhoDifference = rhoDifference;
-            for (Gate gate : room.getEastGates()) {
-                Room rightRoom = room.getRoomBehindGate(gate);
-                minRhoDifference = Math.min(minRhoDifference, calculateRightWallRho(rightRoom, line, coords, rhoDifference));
-            }
-        }
-        return minRhoDifference;
-    }
-
-    private double calculateLeftWallRho(Room room, Line line, Coordinates coords, double minRhoDifference) {
-        double leftWallRho = coords.getX() - room.getMinX();
-        double rhoDifference = Math.abs(leftWallRho - line.getRho());
-
-        if (rhoDifference < minRhoDifference) {
-            minRhoDifference = rhoDifference;
-            for (Gate gate : room.getWestGates()) {
-                Room leftRoom = room.getRoomBehindGate(gate);
-                minRhoDifference = Math.min(minRhoDifference, calculateLeftWallRho(leftRoom, line, coords, rhoDifference));
-            }
-        }
-        return minRhoDifference;
-    }
-
-    private double calculateTopWallRho(Room room, Line line, Coordinates coords, double minRhoDifference) {
-        double topWallRho = coords.getY() - room.getMinY();
-        double rhoDifference = Math.abs(topWallRho - line.getRho());
-
-        if (rhoDifference < minRhoDifference) {
-            minRhoDifference = rhoDifference;
-            for (Gate gate : room.getNorthGates()) {
-                Room topRoom = room.getRoomBehindGate(gate);
-                minRhoDifference = Math.min(minRhoDifference, calculateTopWallRho(topRoom, line, coords, rhoDifference));
-            }
-        }
-        return minRhoDifference;
-    }
-
-    private double calculateBottomWallRho(Room room, Line line, Coordinates coords, double minRhoDifference) {
-        double bottomWallRho = room.getMaxY() - coords.getY();
-        double rhoDifference = Math.abs(bottomWallRho - line.getRho());
-
-        if (rhoDifference < minRhoDifference) {
-            minRhoDifference = rhoDifference;
-            for (Gate gate : room.getWestGates()) {
-                Room bottomRoom = room.getRoomBehindGate(gate);
-                minRhoDifference = Math.min(minRhoDifference, calculateBottomWallRho(bottomRoom, line, coords, rhoDifference));
-            }
-        }
-        return minRhoDifference;
-    }
-
     @Override
-    public double estimateFitnessByTries(Coordinates coords, Double angle, int tries, int matches) {
-        if (tries < visions.size()) {
+    public double estimateFitnessByTries(Coordinates coords, Double angle) {
+        if (CapoRobotConstants.ESTIMATION_TRIES < visions.size()) {
             VisionFitnessAnalyzer analyzer = new VisionFitnessAnalyzer(room, coords.getX(), coords.getY(), angle);
-            int step = visions.size() / tries;
+            int step = visions.size() / CapoRobotConstants.ESTIMATION_TRIES;
 
-            if (matches > countFitnessMatches(analyzer, step)) {
+            if (CapoRobotConstants.ESTIMATION_MATCHED_TRIES > countFitnessMatches(analyzer, step)) {
                 return -1.0;
             }
         }

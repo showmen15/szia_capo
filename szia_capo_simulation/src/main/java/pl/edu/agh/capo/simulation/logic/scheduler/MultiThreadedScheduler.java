@@ -23,8 +23,8 @@ public class MultiThreadedScheduler {
     public MultiThreadedScheduler(int periodTime, int count) {
         this.periodTime = periodTime;
         this.count = count;
-        printerRuntimes = Collections.synchronizedList(new ArrayList<Integer>(count));
-        printers = new ArrayList<Printer>(count);
+        printerRuntimes = Collections.synchronizedList(new ArrayList<>(count));
+        printers = new ArrayList<>(count);
         initializePrinters(count);
     }
 

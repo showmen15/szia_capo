@@ -18,11 +18,10 @@ public class VisionImage {
     private final byte[] bytes;
     private final int size;
     private final int halfSize;
-    private final double maxDistance;
 
     public VisionImage(List<Vision> visions) {
         Vision vision = visions.stream().max((v1, v2) -> Double.compare(v1.getDistance(), v2.getDistance())).get();
-        this.maxDistance = vision.getDistance();
+        double maxDistance = vision.getDistance();
         this.halfSize = (int) Math.ceil(maxDistance / CapoRobotConstants.VISION_PER_PIXEL) + 1;
         this.size = halfSize * 2;
         this.bytes = new byte[size * size];
@@ -91,7 +90,7 @@ public class VisionImage {
         return alpha;
     }
 
-    public byte[] toByteArray() throws IOException {
+    public byte[] toByteArray() {
         return bytes;
     }
 

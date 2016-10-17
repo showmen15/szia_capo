@@ -11,11 +11,9 @@ import static org.junit.Assert.assertEquals;
 
 public class RoomTest {
 
-    private Room room;
-
     @Test
     public void testGroupWalls() throws Exception {
-        room = new Room(Arrays.asList(
+        Room room = new Room(Arrays.asList(
                 buildWall("Wall251", 0.74, 0.4, 2.35, 0.4),
                 buildWall("Wall252", 0.74, 0.4, 0.74, 0.69),
                 buildWall("Wall254", 0.74, 1.2, 0.74, 1.38),

@@ -13,6 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.util.Collections;
 
 public class MazePanel extends JPanel {
@@ -61,12 +62,16 @@ public class MazePanel extends JPanel {
             printWalls(g2, agent.getRoom().getWalls(), Color.black);
             printEtiquettes(g2, agent.getRoom());
         }
-        g2.setColor(countColor(agent.getFactor()));
         Location location = agent.getLocation();
 
-        Polygon vision = getVisionPolygon(location, agent.getVisions());
-        g2.draw(vision);
-        g2.fill(vision);
+        if (agent.getSectionsAwards() == null) {
+            g2.setColor(countColor(agent.getFactor()));
+            Polygon vision = getVisionPolygon(location, agent.getVisions());
+            g2.draw(vision);
+            g2.fill(vision);
+        } else {
+            drawSections(g2, agent, location);
+        }
 
         double x = normalizeCoordinate(location.positionX, minX, ratio);
         double y = normalizeCoordinate(location.positionY, minY, ratio);
@@ -92,6 +97,25 @@ public class MazePanel extends JPanel {
         g2.draw(new Line2D.Double(x, y, getVisionXCoordinate(location.positionX, location.alpha, 0, 0.1),
                 getVisionYCoordinate(location.positionY, location.alpha, 0, 0.1)));
         g2.setColor(Color.black);
+    }
+
+    private void drawSections(Graphics2D graphics2D, AgentViewModel agent, Location location) {
+        //Polygon sections = getSectionsPolygon(location, agent.getSectionsAwards());
+        agent.getSectionsAwards().forEach((section, award) -> {
+            Point2D start = fromMathPoint(section[0]);
+            Point2D end = fromMathPoint(section[1]);
+            Point2D third = fromMathPoint(location.getCoordinates().toPoint2D());
+            Shape shape = new Polygon(new int[]{(int) start.getX(), (int) end.getX(), (int) third.getX()},
+                    new int[]{(int) start.getY(), (int) end.getY(), (int) third.getY()}, 3);
+            graphics2D.setColor(countColor(award));
+            graphics2D.draw(shape);
+            graphics2D.fill(shape);
+        });
+
+    }
+
+    private Point2D fromMathPoint(math.geom2d.Point2D section) {
+        return new Point2D.Double(normalizeCoordinate(section.x(), minX, ratio), normalizeCoordinate(section.y(), minY, ratio));
     }
 
     private Polygon getVisionPolygon(Location location, java.util.List<Vision> visions) {
@@ -123,6 +147,9 @@ public class MazePanel extends JPanel {
     }
 
     private Color countColor(double result) {
+        if (result < 0) {
+            return Color.DARK_GRAY;
+        }
         Long r = Math.round((255 * (1 - result)));
         Long g = Math.round((255 * result));
         return new Color(Integer.valueOf(r.intValue()), Integer.valueOf(g.intValue()), 0, 127);

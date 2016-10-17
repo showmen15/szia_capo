@@ -2,11 +2,13 @@ package pl.edu.agh.capo.robot;
 
 
 import pl.edu.agh.capo.common.Line;
+import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.common.Section;
 import pl.edu.agh.capo.common.Vision;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -19,6 +21,7 @@ public class Measure {
     private final List<Vision> visions;
     private List<Line> lines;
     private List<Section> sections;
+    private List<Double> angles;
 
     public Measure(Date datetime, double rightVelocity, double leftVelocity, List<Vision> visions) {
         this.leftVelocity = milistoMeters(leftVelocity);
@@ -67,6 +70,8 @@ public class Measure {
 
     public void setLines(List<Line> lines) {
         this.lines = lines;
+        this.angles = new LinkedList<>();
+        lines.forEach(this::prepareAngles);
     }
 
     public List<Line> getLines() {
@@ -79,5 +84,17 @@ public class Measure {
 
     public void setSections(List<Section> sections) {
         this.sections = sections;
+    }
+
+    public void prepareAngles(Line line) {
+        double theta = line.getTheta();
+        angles.add(Location.normalizeAlpha(90 - theta));
+        angles.add(Location.normalizeAlpha(180 - theta));
+        angles.add(Location.normalizeAlpha(270 - theta));
+        angles.add(Location.normalizeAlpha(-theta));
+    }
+
+    public List<Double> getAngles() {
+        return angles;
     }
 }

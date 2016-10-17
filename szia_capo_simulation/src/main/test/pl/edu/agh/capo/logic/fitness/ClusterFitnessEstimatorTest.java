@@ -269,7 +269,6 @@ public class ClusterFitnessEstimatorTest {
         assertTrue(String.format("vision[%f] is not higher than cluster[%f]", vision, cluster), vision >= cluster);
     }
 
-    //todo: blad
     @Test
     public void testBestFirstSectionForRoom322() throws Exception {
         setupEstimator(room322, buildFirstSections());

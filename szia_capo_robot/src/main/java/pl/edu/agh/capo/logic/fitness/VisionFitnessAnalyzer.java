@@ -9,10 +9,10 @@ import java.util.List;
 
 public class VisionFitnessAnalyzer {
 
-    private Room room;
-    private double x;
-    private double y;
-    private double angle;
+    private final Room room;
+    private final double x;
+    private final double y;
+    private final double angle;
 
     private double angleNW;
     private double angleNE;

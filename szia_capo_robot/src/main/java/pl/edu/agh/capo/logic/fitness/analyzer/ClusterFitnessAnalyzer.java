@@ -19,8 +19,6 @@ public class ClusterFitnessAnalyzer {
     protected final double angle;
 
     protected Vector2D vectorSS;  //start wall -> start reading
-    protected Vector2D vectorSE;
-    protected Vector2D vectorES;
     protected Vector2D vectorEE;  //end wall -> end reading
 
     protected double vectorSSAngle;
@@ -36,18 +34,36 @@ public class ClusterFitnessAnalyzer {
         this.coordinates = coordinates;
         this.angle = angle;
     }
+//
+//    public static double estimateFitness(Room room, List<Point2D[]> visionSections, List<Point2D[]> wallVectors,
+//                                         List<Point2D[]> gateVectors, Point2D coordinates, double horizontalAngle, Map<Point2D[], Double> sectionAward) {
+//        ClusterFitnessAnalyzer analyzer = new ClusterFitnessAnalyzer(room, wallVectors, gateVectors, coordinates, horizontalAngle);
+//
+//        double sum = 0.0, sumLength = 0.0;
+//        for (Point2D[] visionSection : visionSections) {
+//            double estimate = analyzer.checkWalls(visionSection);
+//            if (estimate <= 0) {
+//                estimate = analyzer.checkGates(visionSection);
+//            }
+//            double visionSectionLength = getLength(visionSection);
+//            sum += estimate * visionSectionLength;
+//            sumLength += visionSectionLength;
+//            sectionAward.put(visionSection, estimate);
+//        }
+//
+//        return sum / sumLength;
+//    }
 
     public static double estimateFitness(Room room, List<Point2D[]> visionSections, List<Point2D[]> wallVectors,
-                                         List<Point2D[]> gateVectors, Point2D coordinates, double horizontalAngle,
-                                         boolean extendsSection) {
-        ClusterFitnessAnalyzer analyzer = extendsSection ?
-                new SectionExtensionClusterFitnessAnalyzer(room, wallVectors, gateVectors, coordinates, horizontalAngle) :
-                new ClusterFitnessAnalyzer(room, wallVectors, gateVectors, coordinates, horizontalAngle);
+                                         List<Point2D[]> gateVectors, Point2D coordinates, double horizontalAngle) {
+        ClusterFitnessAnalyzer analyzer = new ClusterFitnessAnalyzer(room, wallVectors, gateVectors, coordinates, horizontalAngle);
 
         double sum = 0.0, sumLength = 0.0;
         for (Point2D[] visionSection : visionSections) {
             double estimate = analyzer.checkWalls(visionSection);
-            estimate = Math.max(estimate, analyzer.checkGates(visionSection));
+            if (estimate < 0) {
+                estimate = Math.max(estimate, analyzer.checkGates(visionSection));
+            }
             double visionSectionLength = getLength(visionSection);
             sum += estimate * visionSectionLength;
             sumLength += visionSectionLength;
@@ -57,19 +73,26 @@ public class ClusterFitnessAnalyzer {
     }
 
     public double checkGates(Point2D[] visionSection) {
-        double best = 0.0;
         for (Point2D[] gate : gateVectors) {
-            Point2D[] visionStartVector = {coordinates, visionSection[0]};
-            Point2D[] visionEndVector = {coordinates, visionSection[1]};
-            if (segmentsIntersect(gate, visionStartVector) && segmentsIntersect(gate, visionEndVector)) {
+            Point2D[] visionVector = {coordinates, getMiddlePoint(visionSection)};
+            if (segmentsIntersect(gate, visionVector)) {
                 Room nextRoom = room.getRoomBehindGate(gate);
                 List<Point2D[]> filteredGates = nextRoom.getGateVectors().stream().filter(nextGate -> !Arrays.equals(gate, nextGate))
                         .collect(Collectors.toList());
-                best = Math.max(best, estimateFitness(nextRoom, Collections.singletonList(visionSection), nextRoom.getWallVectors(),
-                        filteredGates, coordinates, angle, true));
+                double award = estimateFitness(nextRoom, Collections.singletonList(visionSection), nextRoom.getWallVectors(),
+                        filteredGates, coordinates, angle);
+                if (award > -1) {
+                    return award;
+                }
             }
         }
-        return best;
+        return -1.0;
+    }
+
+    private Point2D getMiddlePoint(Point2D[] section) {
+        double x = (section[0].x() + section[1].x()) / 2;
+        double y = (section[0].y() + section[1].y()) / 2;
+        return new Point2D(x, y);
     }
 
     private static boolean segmentsIntersect(Point2D[] seg1, Point2D[] seg2) {
@@ -89,12 +112,9 @@ public class ClusterFitnessAnalyzer {
     }
 
     public double checkWalls(Point2D[] visionSection) {
-        double best = 0.0;
         double sectionAngle = getAngle(visionSection);
         for (Point2D[] wall : wallVectors) {
-            boolean wallStartInvisible = !isPointVisible(coordinates, angle, wall[0]);
-            boolean wallEndInvisible = !isPointVisible(coordinates, angle, wall[1]);
-            if (wallEndInvisible && wallStartInvisible) {
+            if (!isPointVisible(coordinates, angle, wall[0]) && !isPointVisible(coordinates, angle, wall[1])) {
                 continue;
             }
 
@@ -110,103 +130,111 @@ public class ClusterFitnessAnalyzer {
                 ArrayUtils.reverse(visionSection);
             }
 
-            if (angleDiff < CapoRobotConstants.ANGLE_ACCURANCY && wallMatchesVisionSection(visionSection, wall, wallStartInvisible, wallEndInvisible)) {
-                double award = 0.0;
+            if (angleDiff < CapoRobotConstants.ANGLE_ACCURANCY || visionSection[0].equals(wall[1]) || visionSection[1].equals(wall[0])) {
                 boolean visionStartEqualsWall = wall[0].equals(visionSection[0]);
                 boolean visionEndEqualsWall = wall[1].equals(visionSection[1]);
                 if (visionEndEqualsWall && visionStartEqualsWall) {
                     return 1.0;
                 }
                 setupVectors(visionSection, wall);
-                //print(wall[0], wall[1], visionSection);
 
-                if (inDifferentDirection(vectorESAngle, vectorSEAngle)) {
-                    if (wallIncludesSection(visionStartEqualsWall, visionEndEqualsWall)) {
-                        //#1
-                        award = wallIncludesSectionAward(wall, wallStartInvisible, wallEndInvisible);
-                    } else if (sectionIncludesWall(visionStartEqualsWall, visionEndEqualsWall)) {
-                        //#2
-                        award = sectionIncludesWallAward(visionSection, wall);
-                    } else if (sectionShiftInStartDirection()) {
-                        //#3
-                        award = sectionShiftInStartDirectionAward(visionSection, wall, wallEndInvisible);
-                    } else if (sectionShiftInEndDirection()) {
-                        //#3 reversed
-                        award = sectionShiftInEndDirectionAward(visionSection, wall, wallStartInvisible);
+                if ((visionStartEqualsWall ||
+                        (catetoOpuestoVectorNorm(vectorSS, wall) < CapoRobotConstants.VECTOR_ACCURANCY) ||
+                        (catetoOpuestoVectorNorm(vectorSS, visionSection) < CapoRobotConstants.VECTOR_ACCURANCY))
+                        && (visionEndEqualsWall ||
+                        (catetoOpuestoVectorNorm(vectorEE, wall) < CapoRobotConstants.VECTOR_ACCURANCY) ||
+                        (catetoOpuestoVectorNorm(vectorEE, visionSection) < CapoRobotConstants.VECTOR_ACCURANCY))) {
+
+
+                    if (inDifferentDirection(vectorESAngle, vectorSEAngle)) {
+                        if (visionStartEqualsWall) {
+                            if (inSameDirection(vectorEEAngle, vectorESAngle)) {
+                                // #1
+                                return wallIncludesSectionAward(wall);
+                            } else {
+                                // #2
+                                return sectionIncludesWallAward(visionSection, wall);
+                            }
+                        } else if (visionEndEqualsWall) {
+                            if (inSameDirection(vectorSSAngle, vectorSEAngle)) {
+                                // #1
+                                return wallIncludesSectionAward(wall);
+                            } else {
+                                // #2
+                                return sectionIncludesWallAward(visionSection, wall);
+                            }
+                        } else {
+                            if (inSameDirection(vectorSSAngle, wallAngle)) {
+                                if (inSameDirection(vectorEEAngle, wallAngle)) {
+                                    //#3 reversed
+                                    return sectionShiftInEndDirectionAward(visionSection, wall);
+                                } else {
+                                    // #1
+                                    return wallIncludesSectionAward(wall);
+                                }
+                            } else {
+                                if (inSameDirection(vectorEEAngle, wallAngle)) {
+                                    // #2
+                                    return sectionIncludesWallAward(visionSection, wall);
+                                } else {
+                                    //#3
+                                    return sectionShiftInStartDirectionAward(visionSection, wall);
+                                }
+                            }
+                        }
                     }
-                }
-                if (award > best) {
-                    best = award;
                 }
             }
         }
-        return best;
+        return -1.0;
     }
 
-    protected double wallIncludesSectionAward(Point2D[] wall, boolean wallStartInvisible, boolean wallEndInvisible) {
-        if (wallEndInvisible) {
-            return calculateAward(vectorSS.norm(), perdicularVectorNorm(vectorEE, wall));
-        } else if (wallStartInvisible) {
-            return calculateAward(vectorEE.norm(), perdicularVectorNorm(vectorSS, wall));
-        }
-        return calculateAward(vectorSS.norm(), vectorEE.norm());
+    protected double wallIncludesSectionAward(Point2D[] wall) {
+        return calculateAward(catetoOpuestoVectorNorm(vectorEE, wall), catetoOpuestoVectorNorm(vectorSS, wall));
     }
 
     private double sectionIncludesWallAward(Point2D[] visionSection, Point2D[] wall) {
         return divideAndCalculateAward(visionSection, wall);
     }
 
-    protected double sectionShiftInEndDirectionAward(Point2D[] visionSection, Point2D[] wall, boolean wallStartInvisible) {
-        if (wallStartInvisible) {
-            Point2D[] missingEndSection = {wall[1], visionSection[1]}; //todo: too simple?
-            boolean endExceeds = new Vector2D(missingEndSection[0], missingEndSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
-            if (!endExceeds) {
-                return calculateAward(vectorEE.norm(), perdicularVectorNorm(vectorSS, wall));
-            } else {
-                double middleAward = calculateAward(perdicularVectorNorm(vectorEE, wall), perdicularVectorNorm(vectorSS, wall));
-                return divideAndCalculateStartAward(missingEndSection, middleAward, getLength(wall));
-            }
+    protected double sectionShiftInEndDirectionAward(Point2D[] visionSection, Point2D[] wall) {
+        double endNorm = catetoContiguoVectorNorm(vectorEE, wall);
+        Point2D[] missingEndSection = getMissingEnd(visionSection, endNorm);
+        boolean endExceeds = new Vector2D(missingEndSection[0], missingEndSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
+        if (!endExceeds) {
+            return calculateAward(vectorEE.norm(), catetoOpuestoVectorNorm(vectorSS, wall));
         } else {
-            Point2D[] missingEndSection = {wall[1], visionSection[1]}; //todo: too simple?
-            boolean endExceeds = new Vector2D(missingEndSection[0], missingEndSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
-            if (!endExceeds) {
-                return calculateAward(vectorSS.norm(), vectorEE.norm());
-            } else {
-                Point2D[] middleSection = new Point2D[]{wall[0], visionSection[1]};
-                double middleAward = calculateAward(vectorSS.norm(), perdicularVectorNorm(vectorEE, wall));
-                return divideAndCalculateStartAward(missingEndSection, middleAward, getLength(middleSection));
+            double sum;
+            try {
+                sum = estimateVectors(missingEndSection);
+            } catch (NoMatchException e) {
+                return -1.0;
             }
+            double middleAward = calculateAward(catetoOpuestoVectorNorm(vectorSS, wall), catetoOpuestoVectorNorm(vectorEE, visionSection));
+            Point2D[] middleSection = {visionSection[0], wall[1]};
+            double middleNorm = getLength(middleSection);
+            return (sum + middleAward * middleNorm) / (middleNorm + getLength(missingEndSection));
         }
     }
 
-    protected double sectionShiftInStartDirectionAward(Point2D[] visionSection, Point2D[] wall, boolean wallEndInvisible) {
-        //todo: visibility vector
-        if (wallEndInvisible) {
-            Point2D[] missingStartSection = {visionSection[0], wall[0]}; //todo: too simple?
-            boolean startExceeds = new Vector2D(missingStartSection[0], missingStartSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
-            if (!startExceeds) {
-                return calculateAward(vectorSS.norm(), perdicularVectorNorm(vectorEE, wall));
-            } else {
-                double middleAward = calculateAward(perdicularVectorNorm(vectorSS, wall), perdicularVectorNorm(vectorEE, wall));
-                return divideAndCalculateStartAward(missingStartSection, middleAward, getLength(wall));
-            }
+    protected double sectionShiftInStartDirectionAward(Point2D[] visionSection, Point2D[] wall) {
+        double startNorm = catetoContiguoVectorNorm(vectorSS, wall);
+        Point2D[] missingStartSection = getMissingStart(visionSection, startNorm);
+        boolean startExceeds = new Vector2D(missingStartSection[0], missingStartSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
+        if (!startExceeds) {
+            return calculateAward(vectorSS.norm(), catetoOpuestoVectorNorm(vectorEE, wall));
         } else {
-            Point2D[] missingStartSection = {visionSection[0], wall[0]}; //todo: too simple?
-            boolean startExceeds = new Vector2D(missingStartSection[0], missingStartSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
-            if (!startExceeds) {
-                return calculateAward(vectorSS.norm(), vectorEE.norm());
-            } else {
-                Point2D[] middleSection = new Point2D[]{wall[0], visionSection[1]};
-                double middleAward = calculateAward(perdicularVectorNorm(vectorSS, wall), vectorEE.norm());
-                return divideAndCalculateStartAward(missingStartSection, middleAward, getLength(middleSection));
+            double sum;
+            try {
+                sum = estimateVectors(missingStartSection);
+            } catch (NoMatchException e) {
+                return -1.0;
             }
+            double middleAward = calculateAward(catetoOpuestoVectorNorm(vectorSS, visionSection), catetoOpuestoVectorNorm(vectorEE, wall));
+            Point2D[] middleSection = {wall[0], visionSection[1]};
+            double middleNorm = getLength(middleSection);
+            return (sum + middleAward * middleNorm) / (middleNorm + getLength(missingStartSection));
         }
-    }
-
-    protected double divideAndCalculateStartAward(Point2D[] missingStartSection, double middleAward, double middleNorm) {
-        double[] awards = estimateVectors(missingStartSection);
-        double startNorm = distanceBetween(missingStartSection[0], missingStartSection[1]);
-        return (awards[0] * startNorm + middleAward * middleNorm) / (startNorm + middleNorm);
     }
 
     protected static double getLength(Point2D[] vector) {
@@ -220,72 +248,108 @@ public class ClusterFitnessAnalyzer {
     }
 
     private double divideAndCalculateAward(Point2D[] visionSection, Point2D[] wall) {
-        Point2D[] missingStartSection = {visionSection[0], wall[0]}; //todo: too simple?
-        Point2D[] missingEndSection = {wall[1], visionSection[1]}; //todo: too simple?
+        double startNorm = catetoContiguoVectorNorm(vectorSS, wall);
+        double endNorm = catetoContiguoVectorNorm(vectorEE, wall);
 
-        double startNorm = new Vector2D(missingStartSection[0], missingStartSection[1]).norm();
+        Point2D[] missingStartSection = getMissingStart(visionSection, startNorm);
+        Point2D[] missingEndSection = getMissingEnd(visionSection, endNorm);
+
         boolean startExceeds = startNorm > 0.4;
-        double endNorm = new Vector2D(missingEndSection[0], missingEndSection[1]).norm();
         boolean endExceeds = endNorm > 0.4;
 
-        double[] awards;
-        double middleAward, normSum;
 
-        if (startExceeds) {
-            if (endExceeds) {
-                awards = estimateVectors(missingStartSection, missingEndSection);
-                awards[0] *= startNorm;
-                awards[1] *= endNorm;
-                normSum = startNorm + endNorm;
-                middleAward = calculateAward(perdicularVectorNorm(vectorSS, wall), perdicularVectorNorm(vectorEE, wall));
-            } else {
-                awards = estimateVectors(missingStartSection);
-                awards[0] *= startNorm;
-                normSum = startNorm;
-                middleAward = calculateAward(vectorSS.norm(), perdicularVectorNorm(vectorEE, wall));
-            }
-        } else if (endExceeds) {
-            awards = estimateVectors(missingEndSection);
-            awards[0] *= endNorm;
-            normSum = endNorm;
-            middleAward = calculateAward(perdicularVectorNorm(vectorSS, wall), vectorEE.norm());
-        } else {
-            return calculateAward(vectorSS.norm(), vectorEE.norm());
-        }
-
-        double sum = 0.0;
-        for (double award : awards) {
-            sum += award;
-        }
         double middleNorm = getLength(wall);
-        return (sum + middleAward * middleNorm) / (normSum + middleNorm);
+        double sum, normSum = middleNorm;
+
+        try {
+            if (startExceeds) {
+                if (endExceeds) {
+                    sum = estimateIfStartAndEndExceeds(visionSection, missingStartSection, missingEndSection, middleNorm);
+                    normSum += getLength(missingStartSection) + getLength(missingEndSection);
+                } else {
+                    sum = estimateIfStartExceeds(visionSection, missingStartSection, middleNorm);
+                    normSum += getLength(missingStartSection);
+                }
+            } else if (endExceeds) {
+                sum = estimateIfEndExceeds(visionSection, missingEndSection, middleNorm);
+                normSum += getLength(missingEndSection);
+            } else {
+                return calculateAward(vectorSS.norm(), vectorEE.norm());
+            }
+        } catch (NoMatchException e) {
+            return -1.0;
+        }
+
+        return sum / normSum;
     }
 
-    protected double[] estimateVectors(Point2D[]... sections) {
-        double[] awards = new double[sections.length];
-        for (Room nextRoom : room.getRooms()) {
-            for (int i = 0; i < sections.length; i++) {
-                awards[i] = Math.max(awards[i], estimateFitness(nextRoom, Collections.singletonList(sections[i]),
-                        nextRoom.getWallVectors(), nextRoom.getGateVectors(), coordinates, angle, true));
+    private Point2D[] getMissingStart(Point2D[] visionSection, double norm) {
+        Vector2D directionVector = new Vector2D(visionSection[0], visionSection[1]).normalize();
+        directionVector = directionVector.times(norm);
+        Point2D sectionEnd = new Point2D(visionSection[0].x() + directionVector.x(), visionSection[0].y() + directionVector.y());
+        return new Point2D[]{visionSection[0], sectionEnd};
+    }
+
+    private Point2D[] getMissingEnd(Point2D[] visionSection, double norm) {
+        Vector2D directionVector = new Vector2D(visionSection[1], visionSection[0]).normalize();
+        directionVector = directionVector.times(norm);
+        Point2D sectionStart = new Point2D(visionSection[1].x() + directionVector.x(), visionSection[1].y() + directionVector.y());
+        return new Point2D[]{sectionStart, visionSection[1]};
+    }
+
+    private double estimateIfEndExceeds(Point2D[] section, Point2D[] missingEndSection, double middle) throws NoMatchException {
+        double sum = estimateVectors(missingEndSection);
+        return sum + calculateAward(catetoOpuestoVectorNorm(vectorSS, section), vectorEE.norm()) * middle;
+    }
+
+    private double estimateIfStartExceeds(Point2D[] section, Point2D[] missingStartSection, double middle) throws NoMatchException {
+        double sum = estimateVectors(missingStartSection);
+        return sum + calculateAward(vectorSS.norm(), catetoOpuestoVectorNorm(vectorEE, section)) * middle;
+    }
+
+    private double estimateIfStartAndEndExceeds(Point2D[] section, Point2D[] missingStartSection, Point2D[] missingEndSection, double middle) throws NoMatchException {
+        double sum = estimateVectors(missingStartSection, missingEndSection);
+        return sum + calculateAward(catetoOpuestoVectorNorm(vectorSS, section), catetoOpuestoVectorNorm(vectorEE, section)) * middle;
+    }
+
+    protected double estimateVectors(Point2D[]... sections) throws NoMatchException {
+        double sum = 0.0;
+        for (Point2D[] section : sections) {
+            double award = 0.0;
+            for (Room nextRoom : room.getRooms()) {
+                award = estimateFitness(nextRoom, Collections.singletonList(section),
+                        nextRoom.getWallVectors(), nextRoom.getGateVectors(), coordinates, angle);
+                if (award > 0) {
+                    break;
+                }
             }
+            if (award <= 0) {
+                throw new NoMatchException();
+            }
+            sum += award * getLength(section);
         }
-        return awards;
+        return sum;
     }
 
     protected static double calculateAward(double... vectorNorms) {
         double sum = 0.0;
         for (double norm : vectorNorms) {
+            if (norm > CapoRobotConstants.VECTOR_ACCURANCY) {
+                return 0.0;
+            }
             sum += norm;
         }
-        if (sum > CapoRobotConstants.VECTOR_ACCURANCY) {
-            return 0.0;
-        }
-        return 1.0 - sum / CapoRobotConstants.VECTOR_ACCURANCY;
+        return 1.0 - (sum / 2 * CapoRobotConstants.VECTOR_ACCURANCY);
     }
 
-    protected static double perdicularVectorNorm(Vector2D vector, Point2D[] wall) {
+    protected static double catetoOpuestoVectorNorm(Vector2D vector, Point2D[] wall) {
         double angleBetween = Math.toRadians(calculateAngleDiff(getAngle(vector), getAngle(wall)));
         return Math.sin(angleBetween) * vector.norm();
+    }
+
+    protected static double catetoContiguoVectorNorm(Vector2D vector, Point2D[] wall) {
+        double angleBetween = Math.toRadians(calculateAngleDiff(getAngle(vector), getAngle(wall)));
+        return Math.cos(angleBetween) * vector.norm();
     }
 
     private static double calculateAngleDiff(double angle1, double angle2) {
@@ -312,8 +376,8 @@ public class ClusterFitnessAnalyzer {
 
     private void setupVectors(Point2D[] visionSection, Point2D[] wall) {
         vectorSS = new Vector2D(wall[0], visionSection[0]);   //start wall -> start reading
-        vectorSE = new Vector2D(wall[0], visionSection[1]);
-        vectorES = new Vector2D(wall[1], visionSection[0]);
+        Vector2D vectorSE = new Vector2D(wall[0], visionSection[1]);
+        Vector2D vectorES = new Vector2D(wall[1], visionSection[0]);
         vectorEE = new Vector2D(wall[1], visionSection[1]);    //end wall -> end reading
         vectorSSAngle = getAngle(vectorSS);
         vectorSEAngle = getAngle(vectorSE);
@@ -369,23 +433,6 @@ public class ClusterFitnessAnalyzer {
         return 360 - Math.toDegrees(vector2D.angle());
     }
 
-    private boolean wallMatchesVisionSection(Point2D[] visionSection, Point2D[] wall, boolean wallStartInvisible, boolean wallEndInvisible) {
-        return !(wall[0].equals(visionSection[1]) || wall[1].equals(visionSection[0])) &&
-                wallCoordinatesMatchVisionSection(visionSection, wall, wallStartInvisible, wallEndInvisible);
-
-    }
-
-    //todo: if still OR needed
-    protected boolean wallCoordinatesMatchVisionSection(Point2D[] visionSection, Point2D[] wall, boolean wallStartInvisible, boolean wallEndInvisible) {
-        return ((wallStartInvisible || coordinatesDiffMatchesAccuracy(wall[0], visionSection[0])) ||
-                (wallEndInvisible || coordinatesDiffMatchesAccuracy(wall[1], visionSection[1])));
-    }
-
-    private static boolean coordinatesDiffMatchesAccuracy(Point2D point2D, Point2D point2D1) {
-        return (Math.abs(point2D.x() - point2D1.x()) < CapoRobotConstants.VECTOR_ACCURANCY) &&
-                (Math.abs(point2D.y() - point2D1.y()) < CapoRobotConstants.VECTOR_ACCURANCY);
-    }
-
     private static void print(Point2D wallStart, Point2D wallEnd, Point2D[] visionSection) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("****************************************");
@@ -416,5 +463,8 @@ public class ClusterFitnessAnalyzer {
         stringBuilder.append("\n");
         String text = stringBuilder.toString().replaceAll("\\.", ",");
         System.out.println(text);
+    }
+
+    private class NoMatchException extends Throwable {
     }
 }

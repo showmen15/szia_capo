@@ -66,15 +66,13 @@ public class Room {
     private Point2D[] buildGateVector(Gate gate) {
         Point2D wallStart = new Point2D(gate.getFrom().getX(), gate.getFrom().getY());
         Point2D wallEnd = new Point2D(gate.getTo().getX(), gate.getTo().getY());
-        Point2D[] vector = {wallStart, wallEnd};
-        return vector;
+        return new Point2D[]{wallStart, wallEnd};
     }
 
     protected Point2D[] buildWallVector(Wall wall) {
         Point2D wallStart = new Point2D(wall.getFrom().getX(), wall.getFrom().getY());
         Point2D wallEnd = new Point2D(wall.getTo().getX(), wall.getTo().getY());
-        Point2D[] vector = {wallStart, wallEnd};
-        return vector;
+        return new Point2D[]{wallStart, wallEnd};
     }
 
     private boolean isColinear(Wall wall, Wall wall2) {
@@ -215,9 +213,13 @@ public class Room {
     }
 
     private Coordinates getRandom(double minX, double maxX, double minY, double maxY) {
-        double x = random.nextDouble() * (maxX - minX) + minX;
-        double y = random.nextDouble() * (maxY - minY) + minY;
+        double x = randomInRange(minX, maxX);
+        double y = randomInRange(minY, maxY);
         return createCoordinates(x, y);
+    }
+
+    private double randomInRange(double min, double max) {
+        return Math.random() < 0.5 ? ((1 - Math.random()) * (max - min) + min) : (Math.random() * (max - min) + min);
     }
 
     private Coordinates createCoordinates(double x, double y) {
