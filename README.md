@@ -4,9 +4,9 @@
 
 ```
 git clone https://github.com/sylgas/szia_capo.git
-cd szia_capo\lib
+cd szia_capo\szia_capo_robot\lib
 make.exe --file=Makefile.win
-cd ..\
+cd ..\..\
 mvn clean install
 ```
 
