@@ -89,9 +89,9 @@ public class BasicHoughTransform implements HoughTransform {
     }
 
     private class Result {
-        private int theta;
-        private int radius;
-        private int count;
+        private final int theta;
+        private final int radius;
+        private final int count;
 
         public Result(int theta, int radius, int count) {
             this.theta = theta;

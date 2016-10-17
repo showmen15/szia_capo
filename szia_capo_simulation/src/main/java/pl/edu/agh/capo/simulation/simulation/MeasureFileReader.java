@@ -19,7 +19,7 @@ public class MeasureFileReader implements Iterator<Measure> {
 
     private Iterator<Measure> measures;
 
-    private List<Measure> list = new ArrayList<>();
+    private final List<Measure> list = new ArrayList<>();
 
     public MeasureFileReader(InputStream stream) {
         BufferedReader br = null;
@@ -62,8 +62,8 @@ public class MeasureFileReader implements Iterator<Measure> {
             Vision vision = new Vision(Double.parseDouble(data[i + 1]), Double.parseDouble(data[i]) / 1000);
             visions.add(vision);
         }
-        double leftVelocity = Double.parseDouble(data[1]);
-        double rightVelocity = Double.parseDouble(data[2]);
+        double rightVelocity = Double.parseDouble(data[1]);
+        double leftVelocity = Double.parseDouble(data[2]);
         Date date = DateUtils.parseDate(data[0], new String[]{"yyyy-MM-dd HH:mm:ss.SSS"});
         return new Measure(date, rightVelocity, leftVelocity, visions);
     }

@@ -5,6 +5,7 @@ import pl.edu.agh.capo.common.Location;
 import pl.edu.agh.capo.common.Vision;
 import pl.edu.agh.capo.logic.Room;
 import pl.edu.agh.capo.maze.Coordinates;
+import pl.edu.agh.capo.robot.CapoRobotConstants;
 import pl.edu.agh.capo.robot.Measure;
 
 import java.util.List;
@@ -37,19 +38,18 @@ public class VisionFitnessEstimator extends AbstractFitnessEstimator {
      * To save computation time we first try few visions to check whether calculating fitness of all visions
      * is sensible
      *
-     * @param tries   nr of visions to check first
      * @param matches nr of visions that need to check out to continue computation
      */
     @Override
-    public double estimateFitnessByTries(Coordinates coords, Double angle, int tries, int matches) {
-        if (tries > visions.size()) {
+    public double estimateFitnessByTries(Coordinates coords, Double angle) {
+        if (CapoRobotConstants.ESTIMATION_TRIES > visions.size()) {
             return estimateFitness(coords, angle);
         }
 
         VisionFitnessAnalyzer analyzer = new VisionFitnessAnalyzer(room, coords.getX(), coords.getY(), angle);
-        int step = visions.size() / tries;
+        int step = visions.size() / CapoRobotConstants.ESTIMATION_TRIES;
 
-        if (matches > countFitnessMatches(analyzer, step)) {
+        if (CapoRobotConstants.ESTIMATION_MATCHED_TRIES > countFitnessMatches(analyzer, step)) {
             return -1.0;
         }
 

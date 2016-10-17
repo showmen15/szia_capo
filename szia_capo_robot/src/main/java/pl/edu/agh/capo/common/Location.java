@@ -21,14 +21,6 @@ public class Location implements Serializable {
         this(coords.getX(), coords.getY(), angle);
     }
 
-    public static Location fromString(String line) {
-        String[] attributes = line.split(",");
-        double positionX = Double.parseDouble(attributes[0]);
-        double positionY = Double.parseDouble(attributes[1]);
-        double alpha = Double.parseDouble(attributes[2]);
-        return new Location(positionX, positionY, alpha);
-    }
-
     public double getDistance(Location l) {
         return Math.sqrt((positionX - l.positionX) * (positionX - l.positionX) + (positionY - l.positionY) * (positionY - l.positionY));
     }

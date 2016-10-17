@@ -9,9 +9,11 @@ import pl.edu.agh.capo.maze.MazeMap;
 import pl.edu.agh.capo.maze.helper.MazeHelper;
 import pl.edu.agh.capo.robot.CapoRobotConstants;
 import pl.edu.agh.capo.simulation.logic.scheduler.divider.StatisticsEnergyTimeDivider;
+import pl.edu.agh.capo.simulation.logic.scheduler.divider.StatisticsFitnessTimeDivider;
 import pl.edu.agh.capo.simulation.simulation.files.IMeasureFile;
 import pl.edu.agh.capo.simulation.simulation.files.SimpleMazeMeasureFile;
 import pl.edu.agh.capo.simulation.statistics.IStatisticsPrinter;
+import pl.edu.agh.capo.simulation.statistics.IdealPathWriter;
 import pl.edu.agh.capo.simulation.statistics.StatisticsPrinter;
 import pl.edu.agh.capo.simulation.ui.model.AgentViewModel;
 
@@ -36,8 +38,27 @@ public class SimulationEnvironment {
         currentAgent = timeDivider.getAgents().get(0);
     }
 
+    public static SimulationEnvironment buildPerfectPath(MazeMap map) {
+        IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt2.csv");
+        IStatisticsPrinter statisticsPrinter = new IdealPathWriter("DaneLabirynt2-pozycje.csv");
+        List<Room> rooms = MazeHelper.buildRooms(map);
+        AbstractTimeDivider timeDivider = new StatisticsFitnessTimeDivider(rooms, CapoRobotConstants.FITNESS_ESTIMATOR_CLASS,
+                CapoRobotConstants.INTERVAL_TIME, statisticsPrinter);
+
+        MeasureFileReader reader = new MeasureFileReader(measureFile.getMeasures());
+        MeasureSimulator simulator = new MeasureSimulator(reader);
+        Scheduler scheduler = new Scheduler(timeDivider, simulator);
+        scheduler.setOnFinishListener(() -> {
+            reader.reset();
+            timeDivider.reset();
+            scheduler.start();
+        });
+        new Thread(scheduler::start).start();
+        return new SimulationEnvironment(scheduler, simulator, timeDivider);
+    }
+
     public static SimulationEnvironment build(MazeMap map) {
-        IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt3.csv", "DaneLabirynt3-pozycje,bezHough.csv");
+        IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt1.csv", "DaneLabirynt1-pozycje-pop.csv");
         IStatisticsPrinter statisticsPrinter = new StatisticsPrinter(measureFile.getIdealPath());
         List<Room> rooms = MazeHelper.buildRooms(map);
         AbstractTimeDivider timeDivider = new StatisticsEnergyTimeDivider(rooms, CapoRobotConstants.FITNESS_ESTIMATOR_CLASS,
@@ -66,6 +87,8 @@ public class SimulationEnvironment {
         if (showAll) {
             return timeDivider.getAgents().stream()
                     .map(agent -> new AgentViewModel(agent, timeDivider.getFactor(agent), currentAgent.equals(agent)))
+                    .sorted((a1, a2) -> Double.compare(-a1.getFactor(), -a2.getFactor()))
+                    .limit(3)
                     .collect(Collectors.toList());
         } else {
             return Collections.singletonList(new AgentViewModel(currentAgent, timeDivider.getFactor(currentAgent), true));

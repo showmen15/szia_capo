@@ -1,17 +1,17 @@
 package pl.edu.agh.capo.robot;
 
 import pl.edu.agh.capo.logic.fitness.AbstractFitnessEstimator;
-import pl.edu.agh.capo.logic.fitness.ClusterFitnessEstimator;
+import pl.edu.agh.capo.logic.fitness.VisionFitnessEstimator;
 
 public class CapoRobotConstants {
-    public static final int INTERVAL_TIME = 1;      //200 ms
+    public static final int INTERVAL_TIME = 50;      //200 ms
     public static final double INTERVAL_TIME_IN_SECONDS = 0.2; //INTERVAL_TIME/ 1000; //created for setting flexibility
 
     //Motion model
     public static final double MAX_LINEAR_VELOCITY = 5;//  //m/s
     public static final double MAX_ACCELERATION = 2; // m/s^2
     public static final double MAX_INTERVAL_DISTANCE = MAX_LINEAR_VELOCITY * INTERVAL_TIME_IN_SECONDS;
-    public static final double WHEELS_HALF_DISTANCE = 0.14;
+    public static final double WHEELS_DISTANCE = 0.42;
 
     //Vision model
     public static final double MAX_VISION_DISTANCE = 5.0; //m
@@ -23,10 +23,10 @@ public class CapoRobotConstants {
     public static final double NEIGHBOURHOOD_SCOPE = 0.1;
 
     public static final double PERPENDICULARITY_ACCURANCY = 5;  // in degrees
-    public static final Class<? extends AbstractFitnessEstimator> FITNESS_ESTIMATOR_CLASS = ClusterFitnessEstimator.class;
+    public static final Class<? extends AbstractFitnessEstimator> FITNESS_ESTIMATOR_CLASS = VisionFitnessEstimator.class;
     public static final int ESTIMATION_TRIES = 3;
     public static final int ESTIMATION_MATCHED_TRIES = 2;
-    public static final double COUNT_TIME_FACTOR_MIN = 0.1;
+    public static final double COUNT_TIME_FACTOR_MIN = 0.0;
     public static final double COUNT_TIME_FACTOR_MAX = 0.8;
     public static final double COUNT_TIME_FACTOR_RANGE_SIZE = COUNT_TIME_FACTOR_MAX - COUNT_TIME_FACTOR_MIN;
     //Line estimation
@@ -34,9 +34,8 @@ public class CapoRobotConstants {
 
     public static final double LINE_ESTIMATOR_RHO_ACCURACY = 0.1;
     //Cluster estimation
-    public static final double ANGLE_ACCURANCY = 10.0;
-
-    public static final double VECTOR_ACCURANCY = 0.4;
+    public static final double ANGLE_ACCURANCY = 15.0;
+    public static final double VECTOR_ACCURANCY = 0.2;
     //Hough Transforamtion
     public static final long KHT_CLUSTER_MIN_SIZE = 10;
     public static final double KHT_CLUSTER_MIN_DEVIATION = 2.0;

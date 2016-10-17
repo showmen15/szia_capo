@@ -31,7 +31,9 @@ public class Scheduler {
         workerThread.start();
         divider.recalculate();
         try {
+            Thread startThread = new Thread(this::start);
             wait();
+            startThread.start();
         } catch (InterruptedException e) {
             logger.error("Could not wait for worker", e);
         }
@@ -39,16 +41,14 @@ public class Scheduler {
 
     public void start() {
         if (!measureReader.isFinished()) {
+            divider.updateAgents();
             if (measureReader.isIdle()) {
                 startWorker(new Worker());
             } else {
                 calculateMeasuresTimeDifference(measureReader.read());
                 startWorker(new MeasureWorker());
             }
-            divider.updateFactors();
-            start();
-        }
-        if (listener != null) {
+        } else if (listener != null) {
             onFinishListener.onFinish();
         }
     }
@@ -86,13 +86,14 @@ public class Scheduler {
 
         @Override
         public void run() {
-            long time = System.currentTimeMillis();
+            // long time = System.currentTimeMillis();
+
             houghTransform.run(currentMeasure, CapoRobotConstants.HOUGH_THRESHOLD, CapoRobotConstants.HOUGH_MAX_LINES_COUNT);
             currentMeasure.setLines(houghTransform.getLines());
             currentMeasure.setSections(houghTransform.getSections());
             super.run();
-            long end = System.currentTimeMillis();
-            logger.debug("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
+            //long end = System.currentTimeMillis();
+            // logger.debug("ovetime: " + (end - time - CapoRobotConstants.INTERVAL_TIME));
         }
     }
 
@@ -112,18 +113,37 @@ public class Scheduler {
             long currentTime = nanoTimes[info.getIndex()];
             if (currentTime > 0) {
                 estimatePosition(currentTime);
-        }
+            }
         }
 
         protected void estimatePosition(long currentTime) {
+            //currentAgent.prepare();
             double countFactor = CapoRobotConstants.COUNT_TIME_FACTOR_MIN +
                     CapoRobotConstants.COUNT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
             long countTime = (long) (countFactor * currentTime);
             resetTime(countTime);
-            calculateUntilTimeLeft();
-            int timeLeft = (int) (currentTime - (System.nanoTime() - currentStartTime));
-            resetTime(timeLeft);
-            estimateRandomUntilTimeLeft();
+            if (currentMeasure.getAngles().size() > 0) {
+                calculateWithAnglesUntilTimeLeft();
+                int timeLeft = (int) (currentTime - (System.nanoTime() - currentStartTime));
+                resetTime(timeLeft);
+                estimateRandomWithAnglesUntilTimeLeft();
+            } else {
+                calculateUntilTimeLeft();
+                int timeLeft = (int) (currentTime - (System.nanoTime() - currentStartTime));
+                resetTime(timeLeft);
+                estimateRandomUntilTimeLeft();
+            }
+        }
+
+        private void calculateWithAnglesUntilTimeLeft() {
+            try {
+                checkTime();
+                while (true) {
+                    currentAgent.estimateWithAnglesInNeighbourhood();
+                    checkTime();
+                }
+            } catch (TimeoutException e) {
+            }
         }
 
         private void calculateUntilTimeLeft() {
@@ -131,10 +151,10 @@ public class Scheduler {
                 checkTime();
                 while (true) {
                     currentAgent.estimateInNeighbourhood();
-                checkTime();
-            }
+                    checkTime();
+                }
             } catch (TimeoutException e) {
-        }
+            }
         }
 
         private void resetTime(long time) {
@@ -142,25 +162,39 @@ public class Scheduler {
             this.currentStartTime = System.nanoTime();
         }
 
+        private void estimateRandomWithAnglesUntilTimeLeft() {
+            try {
+                currentAgent.prepareCalculations();
+                while (currentAgent.calculate()) {
+                    checkTime();
+                }
+                while (true) {
+                    currentAgent.estimateRandomWithAngles();
+                    checkTime();
+                }
+            } catch (TimeoutException e) {
+            }
+        }
+
         private void estimateRandomUntilTimeLeft() {
             try {
                 currentAgent.prepareCalculations();
                 while (currentAgent.calculate()) {
                     checkTime();
-            }
+                }
                 while (true) {
                     currentAgent.estimateRandom();
                     checkTime();
-            }
+                }
             } catch (TimeoutException e) {
-        }
+            }
         }
 
         private void checkTime() throws TimeoutException {
             long diff = System.nanoTime() - currentStartTime;
             if (diff >= currentTime) {
                 throw new TimeoutException();
-        }
+            }
         }
 
         @Override

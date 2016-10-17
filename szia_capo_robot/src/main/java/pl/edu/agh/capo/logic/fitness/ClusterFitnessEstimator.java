@@ -8,16 +8,19 @@ import pl.edu.agh.capo.logic.Room;
 import pl.edu.agh.capo.logic.fitness.analyzer.ClusterFitnessAnalyzer;
 import pl.edu.agh.capo.maze.Coordinates;
 import pl.edu.agh.capo.maze.Wall;
+import pl.edu.agh.capo.robot.CapoRobotConstants;
 import pl.edu.agh.capo.robot.Measure;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class ClusterFitnessEstimator extends AbstractFitnessEstimator {
+public class ClusterFitnessEstimator extends VisionFitnessEstimator {
     private final Room room;
     private final List<Section> sections;
+    // private Map<Point2D[], Double> sectionAward;
 
     public ClusterFitnessEstimator(Room room, Measure measure) {
+        super(room, measure);
         this.room = room;
         this.sections = measure.getSections();
     }
@@ -29,7 +32,15 @@ public class ClusterFitnessEstimator extends AbstractFitnessEstimator {
     }
 
     @Override
-    public double estimateFitnessByTries(Coordinates coords, Double angle, int tries, int matches) {
+    public double estimateFitnessByTries(Coordinates coords, Double angle) {
+        if (CapoRobotConstants.ESTIMATION_TRIES < visions.size()) {
+            VisionFitnessAnalyzer analyzer = new VisionFitnessAnalyzer(room, coords.getX(), coords.getY(), angle);
+            int step = visions.size() / CapoRobotConstants.ESTIMATION_TRIES;
+
+            if (CapoRobotConstants.ESTIMATION_MATCHED_TRIES > countFitnessMatches(analyzer, step)) {
+                return -1.0;
+            }
+        }
         return estimateFitness(coords.toPoint2D(), angle);
     }
 
@@ -82,7 +93,11 @@ public class ClusterFitnessEstimator extends AbstractFitnessEstimator {
         List<Point2D[]> visionSections = new LinkedList<>();
         sections.forEach(section -> visionSections.add(getVisionSection(section, coordinates, alpha)));
         double normalizedAngle = (-alpha + 360 + 90) % 360;
-        return ClusterFitnessAnalyzer.estimateFitness(room, visionSections, room.getWallVectors(), room.getGateVectors(), coordinates, normalizedAngle, false);
+        // double award = ClusterFitnessAnalyzer.estimateFitness(room, visionSections, room.getWallVectors(), room.getGateVectors(), coordinates, normalizedAngle);
+        //  return award < 0? 0.0: award;
+        // sectionAward = new HashMap<>();
+        return ClusterFitnessAnalyzer.estimateFitness(room, visionSections, room.getWallVectors(), room.getGateVectors(),
+                coordinates, normalizedAngle);
     }
 
     protected static Point2D computeIntersectionOfSegments(Point2D[] seg1, Point2D[] seg2) {
@@ -100,12 +115,10 @@ public class ClusterFitnessEstimator extends AbstractFitnessEstimator {
         if (uA < 0 || uA > 1 || uB < 0 || uB > 1)
             return null;  // lines can't intersect
 
-        Point2D intersectionPoint = new Point2D(a0x + uA * (a1x - a0x), a0y + uA * (a1y - a0y));
-
-//  /* Compute cross product */
+        //  /* Compute cross product */
 //        double crossAB = (a0x - b0x) * (b1y - b0y) - (b1x - b0x) * (a0y - b0y);
 
-        return intersectionPoint;
+        return new Point2D(a0x + uA * (a1x - a0x), a0y + uA * (a1y - a0y));
     }
 
     private void printVectors(Vector2D... vectors) {
@@ -114,9 +127,8 @@ public class ClusterFitnessEstimator extends AbstractFitnessEstimator {
         }
     }
 
-
-    private double getWallLength(Wall wall) {
-        return distanceBetween(wall.getFrom(), wall.getTo());
-    }
+//    public Map<Point2D[], Double> getSectionAward() {
+//        return null; //sectionAward;
+//    }
 
 }

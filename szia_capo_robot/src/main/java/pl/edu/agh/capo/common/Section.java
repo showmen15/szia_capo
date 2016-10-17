@@ -8,6 +8,7 @@ import pl.edu.agh.capo.robot.CapoRobotConstants;
 public class Section {
     protected final Point2D[] vector;
 
+    @SuppressWarnings("unused") //kht compability
     public Section(double rawRho, double rawTheta, Coordinates[] pixels) {
         this.vector = new Point2D[]{adjust(pixels[0]), adjust(pixels[pixels.length - 1])};
     }

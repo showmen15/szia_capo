@@ -24,7 +24,10 @@ public class StatisticsEnergyTimeDivider extends EnergyTimeDivider {
 
     @Override
     public void recalculate() {
-        super.recalculate();
-        statisticsPrinter.update(getBest(), intervalFactorSum, agentCount);
+        try {
+            super.recalculate();
+        } finally {
+            statisticsPrinter.update(getBest(), intervalFactorSum, agentCount);
+        }
     }
 }
