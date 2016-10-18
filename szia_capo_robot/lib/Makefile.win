@@ -17,27 +17,3 @@ clean: clean-custom
 
 ${BIN}: ${OBJ}
 	${CPP} -m64 -shared ${OBJ} -o ${BIN} -Wl,--output-def,${DEF},--out-implib,${STATIC},--add-stdcall-alias
-
-../kht_sandbox/kht_source/buffer_2d.o: ../kht_sandbox/kht_source/buffer_2d.cpp
-	${CPP} -c ../kht_sandbox/kht_source/buffer_2d.cpp -o ../kht_sandbox/kht_source/buffer_2d.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/jni_kernel_hough.o: ../kht_sandbox/kht_source/jni_kernel_hough.cpp
-	${CPP} -c ../kht_sandbox/kht_source/jni_kernel_hough.cpp -o ../kht_sandbox/kht_source/jni_kernel_hough.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/kht.o: ../kht_sandbox/kht_source/kht.cpp
-	${CPP} -c ../kht_sandbox/kht_source/kht.cpp -o ../kht_sandbox/kht_source/kht.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/linking.o: ../kht_sandbox/kht_source/linking.cpp
-	${CPP} -c ../kht_sandbox/kht_source/linking.cpp -o ../kht_sandbox/kht_source/linking.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/peak_detection.o: ../kht_sandbox/kht_source/peak_detection.cpp
-	${CPP} -c ../kht_sandbox/kht_source/peak_detection.cpp -o ../kht_sandbox/kht_source/peak_detection.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/subdivision.o: ../kht_sandbox/kht_source/subdivision.cpp
-	${CPP} -c ../kht_sandbox/kht_source/subdivision.cpp -o ../kht_sandbox/kht_source/subdivision.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/voting.o: ../kht_sandbox/kht_source/voting.cpp
-	${CPP} -c ../kht_sandbox/kht_source/voting.cpp -o ../kht_sandbox/kht_source/voting.o ${CXXFLAGS}
-
-../kht_sandbox/kht_source/eigen.o: ../kht_sandbox/kht_source/eigen.cpp
-	${CPP} -c ../kht_sandbox/kht_source/eigen.cpp -o ../kht_sandbox/kht_source/eigen.o ${CXXFLAGS}
