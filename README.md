@@ -10,10 +10,12 @@ cd ..\..\
 mvn clean install
 ```
 
-## Uruchomienie
+Wersja Apache Maven: 3.0.5 
+
+## Uruchomienie symulatora
 
 ```
-java -jar target\szia-capo-1.0-SNAPSHOT.jar
+java -jar szia_capo_simulation\target\szia-capo-simulation-1.0-SNAPSHOT.jar
 ```
 
 ## Wizja
