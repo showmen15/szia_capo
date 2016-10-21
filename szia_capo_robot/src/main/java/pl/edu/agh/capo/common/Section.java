@@ -18,7 +18,7 @@ public class Section {
     }
 
     protected static Point2D adjust(Coordinates pixel) {
-        return new Point2D(pixel.getX() * CapoRobotConstants.VISION_PER_PIXEL, -pixel.getY() * CapoRobotConstants.VISION_PER_PIXEL);
+        return new Point2D(pixel.getX() * CapoRobotConstants.KHT_VISION_PER_PIXEL, -pixel.getY() * CapoRobotConstants.KHT_VISION_PER_PIXEL);
     }
 
     public static Point2D rotate(Point2D point2D, double theta) {

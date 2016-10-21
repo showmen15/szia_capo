@@ -39,7 +39,7 @@ public class SimulationEnvironment {
     }
 
     public static SimulationEnvironment buildPerfectPath(MazeMap map) {
-        IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt2.csv");
+        IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt1.csv");
         IStatisticsPrinter statisticsPrinter = new IdealPathWriter("DaneLabirynt2-pozycje.csv");
         List<Room> rooms = MazeHelper.buildRooms(map);
         AbstractTimeDivider timeDivider = new StatisticsFitnessTimeDivider(rooms, CapoRobotConstants.FITNESS_ESTIMATOR_CLASS,
@@ -56,6 +56,19 @@ public class SimulationEnvironment {
         new Thread(scheduler::start).start();
         return new SimulationEnvironment(scheduler, simulator, timeDivider);
     }
+
+//    public static SimulationEnvironment buildRobotTest(MazeMap map) {
+//        LocalizationRunner runner = new LocalizationRunner();
+//        IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt1.csv");
+//        MeasureFileReader reader = new MeasureFileReader(measureFile.getMeasures());
+//        MeasureSimulator simulator = new MeasureSimulator(reader);
+//        try {
+//            runner.start(simulator, "D:\\Projekty\\szia_capo\\MazeRoboLabFullMap2.roson");
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//        return new SimulationEnvironment(runner.getScheduler(), simulator, runner.getTimeDivider());
+//    }
 
     public static SimulationEnvironment build(MazeMap map) {
         IMeasureFile measureFile = new SimpleMazeMeasureFile("DaneLabirynt1.csv", "DaneLabirynt1-pozycje-pop.csv");

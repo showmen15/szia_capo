@@ -22,7 +22,7 @@ public class VisionImage {
     public VisionImage(List<Vision> visions) {
         Vision vision = visions.stream().max((v1, v2) -> Double.compare(v1.getDistance(), v2.getDistance())).get();
         double maxDistance = vision.getDistance();
-        this.halfSize = (int) Math.ceil(maxDistance / CapoRobotConstants.VISION_PER_PIXEL) + 1;
+        this.halfSize = (int) Math.ceil(maxDistance / CapoRobotConstants.KHT_VISION_PER_PIXEL) + 1;
         this.size = halfSize * 2;
         this.bytes = new byte[size * size];
         for (int i = 0; i < bytes.length; i++) {
@@ -48,7 +48,7 @@ public class VisionImage {
     }
 
     private void addPoint(Vision vision) {
-        double distance = vision.getDistance() / CapoRobotConstants.VISION_PER_PIXEL;
+        double distance = vision.getDistance() / CapoRobotConstants.KHT_VISION_PER_PIXEL;
         double angleInRadians = Math.toRadians(vision.getAngle());
         addPoint(distance, angleInRadians);
     }

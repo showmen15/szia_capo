@@ -48,7 +48,7 @@ public class Scheduler {
                 calculateMeasuresTimeDifference(measureReader.read());
                 startWorker(new MeasureWorker());
             }
-        } else if (listener != null) {
+        } else if (onFinishListener != null) {
             onFinishListener.onFinish();
         }
     }
@@ -118,8 +118,8 @@ public class Scheduler {
 
         protected void estimatePosition(long currentTime) {
             //currentAgent.prepare();
-            double countFactor = CapoRobotConstants.COUNT_TIME_FACTOR_MIN +
-                    CapoRobotConstants.COUNT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
+            double countFactor = CapoRobotConstants.ENHANCEMENT_TIME_FACTOR_MIN +
+                    CapoRobotConstants.ENHANCEMENT_TIME_FACTOR_RANGE_SIZE * currentAgent.getFitness();
             long countTime = (long) (countFactor * currentTime);
             resetTime(countTime);
             if (currentMeasure.getAngles().size() > 0) {

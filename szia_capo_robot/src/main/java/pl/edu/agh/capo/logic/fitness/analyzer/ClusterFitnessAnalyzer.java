@@ -130,7 +130,7 @@ public class ClusterFitnessAnalyzer {
                 ArrayUtils.reverse(visionSection);
             }
 
-            if (angleDiff < CapoRobotConstants.ANGLE_ACCURANCY || visionSection[0].equals(wall[1]) || visionSection[1].equals(wall[0])) {
+            if (angleDiff < CapoRobotConstants.CLUSTER_ESTIMATOR_ANGLE_ACCURACY || visionSection[0].equals(wall[1]) || visionSection[1].equals(wall[0])) {
                 boolean visionStartEqualsWall = wall[0].equals(visionSection[0]);
                 boolean visionEndEqualsWall = wall[1].equals(visionSection[1]);
                 if (visionEndEqualsWall && visionStartEqualsWall) {
@@ -139,11 +139,11 @@ public class ClusterFitnessAnalyzer {
                 setupVectors(visionSection, wall);
 
                 if ((visionStartEqualsWall ||
-                        (catetoOpuestoVectorNorm(vectorSS, wall) < CapoRobotConstants.VECTOR_ACCURANCY) ||
-                        (catetoOpuestoVectorNorm(vectorSS, visionSection) < CapoRobotConstants.VECTOR_ACCURANCY))
+                        (catetoOpuestoVectorNorm(vectorSS, wall) < CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY) ||
+                        (catetoOpuestoVectorNorm(vectorSS, visionSection) < CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY))
                         && (visionEndEqualsWall ||
-                        (catetoOpuestoVectorNorm(vectorEE, wall) < CapoRobotConstants.VECTOR_ACCURANCY) ||
-                        (catetoOpuestoVectorNorm(vectorEE, visionSection) < CapoRobotConstants.VECTOR_ACCURANCY))) {
+                        (catetoOpuestoVectorNorm(vectorEE, wall) < CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY) ||
+                        (catetoOpuestoVectorNorm(vectorEE, visionSection) < CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY))) {
 
 
                     if (inDifferentDirection(vectorESAngle, vectorSEAngle)) {
@@ -200,7 +200,7 @@ public class ClusterFitnessAnalyzer {
     protected double sectionShiftInEndDirectionAward(Point2D[] visionSection, Point2D[] wall) {
         double endNorm = catetoContiguoVectorNorm(vectorEE, wall);
         Point2D[] missingEndSection = getMissingEnd(visionSection, endNorm);
-        boolean endExceeds = new Vector2D(missingEndSection[0], missingEndSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
+        boolean endExceeds = new Vector2D(missingEndSection[0], missingEndSection[1]).norm() > CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY;
         if (!endExceeds) {
             return calculateAward(vectorEE.norm(), catetoOpuestoVectorNorm(vectorSS, wall));
         } else {
@@ -220,7 +220,7 @@ public class ClusterFitnessAnalyzer {
     protected double sectionShiftInStartDirectionAward(Point2D[] visionSection, Point2D[] wall) {
         double startNorm = catetoContiguoVectorNorm(vectorSS, wall);
         Point2D[] missingStartSection = getMissingStart(visionSection, startNorm);
-        boolean startExceeds = new Vector2D(missingStartSection[0], missingStartSection[1]).norm() > CapoRobotConstants.VECTOR_ACCURANCY;
+        boolean startExceeds = new Vector2D(missingStartSection[0], missingStartSection[1]).norm() > CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY;
         if (!startExceeds) {
             return calculateAward(vectorSS.norm(), catetoOpuestoVectorNorm(vectorEE, wall));
         } else {
@@ -334,12 +334,12 @@ public class ClusterFitnessAnalyzer {
     protected static double calculateAward(double... vectorNorms) {
         double sum = 0.0;
         for (double norm : vectorNorms) {
-            if (norm > CapoRobotConstants.VECTOR_ACCURANCY) {
+            if (norm > CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY) {
                 return 0.0;
             }
             sum += norm;
         }
-        return 1.0 - (sum / 2 * CapoRobotConstants.VECTOR_ACCURANCY);
+        return 1.0 - (sum / 2 * CapoRobotConstants.CLUSTER_ESTIMATOR_VECTOR_ACCURACY);
     }
 
     protected static double catetoOpuestoVectorNorm(Vector2D vector, Point2D[] wall) {
